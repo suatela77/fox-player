@@ -13,8 +13,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .item{background:#191919;border:1px solid #383838;border-radius:14px;margin:10px 0;overflow:hidden}
 .line{display:flex;align-items:center;gap:12px;width:100%;margin:0;background:transparent;color:#eee;text-align:left;font-weight:normal;padding:12px 14px;min-height:60px;border-radius:0}
 .dot{width:14px;height:14px;border-radius:50%;flex:none;background:#777}.dot.ok{background:#3ddc84}.dot.soon{background:#ffc107}.dot.bad{background:#ff5252}
-.who{flex:1;min-width:0}.who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.who small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.when{font-size:14px;text-align:right;color:#ccc;flex:none}.when.bad{color:#ff8a8a}.when.soon{color:#ffd966}
+.who{flex:1;min-width:0}.who b{display:block;overflow-wrap:anywhere}.who small{display:block;overflow-wrap:anywhere}
+.when{font-size:14px;text-align:right;color:#ccc;flex:none}@media(max-width:560px){.line{flex-wrap:wrap}.who{flex:1 1 calc(100% - 30px)}.when{width:100%;text-align:left;padding-left:26px}}.when.bad{color:#ff8a8a}.when.soon{color:#ffd966}
 .detail{padding:4px 16px 18px;border-top:1px solid #333}.detail h3{font-size:17px;margin:18px 0 4px;color:#ffad60}
 .actions{display:flex;flex-wrap:wrap}.pager{display:flex;align-items:center;gap:10px;justify-content:center;margin:16px 0}
 .tag{display:inline-block;background:#2a2a2a;border-radius:6px;padding:2px 8px;font-size:13px;color:#ddd;margin-left:6px}
@@ -76,14 +76,14 @@ const head=el('button',{type:'button',class:'line','aria-expanded':String(opened
 const wrap=el('div',{class:'item'},head);if(opened)wrap.append(detail(d,c,st));return wrap}
 function field(label,id,val,ph,attrs){return el('div',null,el('label',{for:id,text:label}),el('input',{id,value:val||'',placeholder:ph||'',autocomplete:'off',...(attrs||{})}))}
 function detail(d,c,st){const box=el('div',{class:'detail'});const expTxt=Date.parse(d.expires_at)?new Date(d.expires_at).toLocaleString('pt-BR'):'—';
-box.append(el('p',null,'Licença: ',el('b',{text:st.t}),el('span',{class:'tag',text:'até '+expTxt})));
+box.append(el('p',null,'Código do aparelho: ',el('code',{text:d.device_code})));box.append(el('p',null,'Licença: ',el('b',{text:st.t}),el('span',{class:'tag',text:'até '+expTxt})));
 /* cliente */
 box.append(el('h3',{text:'Cliente'}));
 if(!customersReady){box.append(el('p',{class:'danger',text:'O cadastro de clientes ainda não foi ativado no banco de dados. Rode o arquivo clientes.sql no Supabase e toque em Atualizar.'}))}
-else{const form=el('form');const g=el('div',{class:'grid'},field('Nome do cliente','c_name',c.name,'Ex.: João da Silva',{maxlength:'120'}),field('WhatsApp','c_wa',c.whatsapp,'(11) 91234-5678',{maxlength:'30',inputmode:'tel'}),el('div',null,el('label',{for:'c_srv',text:'Servidor'}),el('input',{id:'c_srv',value:c.server_name||'',placeholder:hostOf(d.playlist_url)||'Nome do servidor',list:'srvList',maxlength:'80',autocomplete:'off'})),field('Plano / valor','c_plan',c.plan_value,'Ex.: R$ 30 / mês',{maxlength:'40'}),field('Forma de pagamento','c_pay',c.pay_method,'Ex.: PIX',{maxlength:'40'}));
+else{const form=el('form');const g=el('div',{class:'grid'},field('Nome do cliente','c_name',c.name,'Ex.: João da Silva',{maxlength:'120'}),field('WhatsApp','c_wa',c.whatsapp,'(11) 91234-5678',{maxlength:'30',inputmode:'tel'}),el('div',null,el('label',{for:'c_srv',text:'Servidor'}),el('input',{id:'c_srv',value:c.server_name||'',placeholder:hostOf(d.playlist_url)||'Nome do servidor',list:'srvList',maxlength:'80',autocomplete:'off'})),field('Plano / valor','c_plan',c.plan_value,'Ex.: R$ 30 / mês',{maxlength:'40'}));
 const dl=el('datalist',{id:'srvList'},...[...new Set(devices.map(serverOf).filter(Boolean))].map(n=>el('option',{value:n})));
 form.append(g,dl,el('label',{for:'c_notes',text:'Observação'}),el('textarea',{id:'c_notes',maxlength:'500',placeholder:'Ex.: pagou até dia 10',text:c.notes||''}),el('div',{class:'actions'},el('button',{text:'Salvar cliente'})));
-form.onsubmit=e=>{e.preventDefault();working(form,async()=>{await rpc('fp_customer_set',{p_code:d.device_code,p_name:$('c_name').value.trim(),p_whatsapp:$('c_wa').value.trim(),p_server:$('c_srv').value.trim(),p_plan:$('c_plan').value.trim(),p_pay:$('c_pay').value.trim(),p_notes:$('c_notes').value.trim()});tell('Cliente salvo.');await refresh()})};box.append(form)}
+form.onsubmit=e=>{e.preventDefault();working(form,async()=>{await rpc('fp_customer_set',{p_code:d.device_code,p_name:$('c_name').value.trim(),p_whatsapp:$('c_wa').value.trim(),p_server:$('c_srv').value.trim(),p_plan:$('c_plan').value.trim(),p_pay:c.pay_method||'',p_notes:$('c_notes').value.trim()});tell('Cliente salvo.');await refresh()})};box.append(form)}
 /* lista */
 box.append(el('h3',{text:'Lista'}));
 box.append(el('p',{text:d.playlist_name?d.playlist_name:'Sem lista cadastrada'}));
@@ -91,7 +91,7 @@ if(d.playlist_url){const shown=el('code',{text:'••••••••••�
 /* ações */
 box.append(el('h3',{text:'Ações'}));const act=el('div',{class:'actions'});
 const wa=waLink(c,d);if(wa)act.append(el('a',{href:wa,target:'_blank',rel:'noopener noreferrer'},el('button',{type:'button',text:'Cobrar no WhatsApp'})));
-if(!$('activation').hidden){for(const n of[30,90])act.append(el('button',{type:'button',class:'secondary',text:'+'+n+' dias',onclick:e=>{if(!confirm('Acrescentar '+n+' dias ao aparelho '+d.device_code+'?'))return;working(e.currentTarget.parentElement,async()=>{const x=await rpc('fp_activate_device',{p_code:d.device_code,p_days:n});tell('Licença atualizada até '+new Date(x).toLocaleString('pt-BR'));await refresh()})}}))}
+if(!$('activation').hidden){for(const m of[1,2,3,6,12]){const label='+'+m+(m===1?' mês':' meses');act.append(el('button',{type:'button',class:'secondary',text:label,onclick:e=>{const exp=Date.parse(d.expires_at),base=new Date(Math.max(exp||0,Date.now())),target=new Date(base);target.setMonth(target.getMonth()+m);if(target.getDate()!==base.getDate())target.setDate(0);const n=Math.max(1,Math.round((target-base)/DAY));if(!confirm('Acrescentar '+(m===1?'1 mês':m+' meses')+' ('+n+' dias) ao aparelho '+d.device_code+'?\nNovo vencimento: '+target.toLocaleDateString('pt-BR')))return;working(e.currentTarget.parentElement,async()=>{const x=await rpc('fp_activate_device',{p_code:d.device_code,p_days:n});tell('Licença atualizada até '+new Date(x).toLocaleString('pt-BR'));await refresh()})}}))}}
 act.append(el('button',{type:'button',class:'secondary',text:'Editar lista / licença',onclick:()=>{$('code').value=d.device_code;$('activationCode').value=d.device_code;$('listName').value=d.playlist_name||'Minha lista';$('listUrl').value=d.playlist_url||'';$('playlistFold').open=true;$('playlistFold').scrollIntoView({behavior:'smooth'});$('listUrl').focus()}}));
 if(!$('activation').hidden){act.append(el('button',{type:'button',class:'danger-btn',text:'Excluir aparelho',onclick:e=>{if(!confirm('Excluir o aparelho '+d.device_code+'? A licença, a lista e os dados do cliente serão apagados.'))return;working(e.currentTarget.parentElement,async()=>{await rpc('fp_delete_device',{p_code:d.device_code});ui.open=null;tell('Aparelho excluído.');await refresh()})}}))}
 box.append(act);return box}
