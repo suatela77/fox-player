@@ -17,7 +17,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .when{font-size:14px;text-align:right;color:#ccc;flex:none}@media(max-width:560px){.line{flex-wrap:wrap}.who{flex:1 1 calc(100% - 30px)}.when{width:100%;text-align:left;padding-left:26px}}.when.bad{color:#ff8a8a}.when.soon{color:#ffd966}
 .detail{padding:4px 16px 18px;border-top:1px solid #333}.detail h3{font-size:17px;margin:18px 0 4px;color:#ffad60}
 .actions{display:flex;flex-wrap:wrap}.pager{display:flex;align-items:center;gap:10px;justify-content:center;margin:16px 0}
-.tag{display:inline-block;background:#2a2a2a;border-radius:6px;padding:2px 8px;font-size:13px;color:#ddd;margin-left:6px}
+.warn{color:#ffd966}.bad-t{color:#ff8a8a}.tag{display:inline-block;background:#2a2a2a;border-radius:6px;padding:2px 8px;font-size:13px;color:#ddd;margin-left:6px}
 details.fold{margin:16px 0}details.fold>summary{cursor:pointer;font-size:19px;padding:14px 18px;background:#191919;border:1px solid #383838;border-radius:14px;list-style:none}
 details.fold[open]>summary{border-bottom-left-radius:0;border-bottom-right-radius:0}details.fold>.inner{background:#191919;border:1px solid #383838;border-top:0;border-radius:0 0 14px 14px;padding:4px 18px 18px}
 </style><main><h1>FOX <span>PLAYER</span></h1><p>Painel de clientes, aparelhos e listas</p><p id="notice" role="status" aria-live="polite"></p>
@@ -26,6 +26,10 @@ details.fold[open]>summary{border-bottom-left-radius:0;border-bottom-right-radiu
 
 <div id="dashboard" hidden>
 <div class="row"><p id="account"></p><div><button id="refresh" class="secondary">Atualizar</button><button id="logout" class="secondary">Sair</button></div></div>
+
+<section id="planBox" hidden><h2>Meu plano</h2><p id="planInfo"></p><form id="partnerActivateForm"><label for="pCode">Ativar um aparelho no meu plano</label><input id="pCode" required placeholder="AA:BB:CC:DD:EE:FF" maxlength="17" pattern="([a-fA-F0-9]{2}:){5}[a-fA-F0-9]{2}"><button>Ativar no meu plano</button></form></section>
+
+<details class="fold" id="resellersFold" hidden><summary>Revendas (planos parceiro)</summary><div class="inner"><div id="resellers"></div><h3 style="color:#ffad60">Adicionar revenda</h3><form id="addResellerForm"><label for="rEmail">E-mail da conta da revenda</label><input id="rEmail" type="email" required autocomplete="off"><label for="rName">Nome da revenda</label><input id="rName" maxlength="80" autocomplete="off"><p><small>Antes, crie o usuário no Supabase: Authentication → Users → Add user (com e-mail e senha) e marque "Auto Confirm User".</small></p><button>Adicionar revenda</button></form></div></details>
 
 <section><h2>Clientes e aparelhos</h2>
 <div class="chips" id="chips"></div>
@@ -42,6 +46,8 @@ details.fold[open]>summary{border-bottom-left-radius:0;border-bottom-right-radiu
 'use strict';
 const base='https://zrabqvbmpkdupaqjaqpf.supabase.co',key='sb_publishable_mBJOcNCmCsFz0U7KwNwwlw_sXzuVEmC';
 const PAGE=50,DAY=864e5;
+const PLANS=[['Inicial',50],['Bronze',100],['Prata',200],['Ouro',300],['Diamante',500]];
+let myPlan=null,resellers=[];
 const $=id=>document.getElementById(id);
 let session=null,account=null,devices=[],versions=new Map(),customers=new Map(),customersReady=true,epoch=0;
 const ui={q:'',chip:'all',server:'',page:0,open:null};
@@ -50,7 +56,7 @@ const tell=t=>{$('notice').textContent=t};
 /* ---------- rede ---------- */
 async function request(path,body,authenticated=true){if(authenticated&&(!session||Date.now()>=session.deadline)){clearSession();throw Error('Sua sessão terminou. Entre novamente.')}const response=await fetch(base+path,{method:'POST',headers:{apikey:key,'Content-Type':'application/json',...(authenticated?{Authorization:'Bearer '+session.access_token}:{})},body:JSON.stringify(body),signal:AbortSignal.timeout(20000)});const raw=await response.text();let data;try{data=raw?JSON.parse(raw):null}catch{}if(!response.ok)throw Error(data?.message||data?.error_description||'Não foi possível concluir. Confira a conexão e tente novamente.');return data}
 const rpc=(name,body={})=>request('/rest/v1/rpc/'+name,body);
-function clearSession(){epoch++;session=null;account=null;devices=[];customers=new Map();ui.open=null;$('devices').replaceChildren();$('dashboard').hidden=true;$('login').hidden=false;$('playlistForm').reset();$('activationForm').reset()}
+function clearSession(){epoch++;myPlan=null;resellers=[];$('planBox').hidden=true;$('resellersFold').hidden=true;session=null;account=null;devices=[];customers=new Map();ui.open=null;$('devices').replaceChildren();$('dashboard').hidden=true;$('login').hidden=false;$('playlistForm').reset();$('activationForm').reset()}
 
 /* ---------- utilidades ---------- */
 function el(tag,props,...kids){const n=document.createElement(tag);if(props)for(const[k,v]of Object.entries(props)){if(k==='class')n.className=v;else if(k==='text')n.textContent=v;else if(k.startsWith('on'))n[k]=v;else n.setAttribute(k,v)}for(const c of kids)if(c!=null)n.append(c);return n}
@@ -64,7 +70,24 @@ function waLink(c,d){const n=String(c.whatsapp||'').replace(/\D/g,'');if(n.lengt
 async function working(form,fn){const buttons=[...form.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{await fn()}catch(e){tell(e.message||'Falha na conexão. Tente novamente.')}finally{buttons.forEach(b=>b.disabled=false)}}
 
 /* ---------- dados ---------- */
-async function refresh(){const cur=epoch;const rows=await rpc('fp_panel_devices');if(cur!==epoch)return;devices=Array.isArray(rows)?rows:[];try{const cs=await rpc('fp_customers_list');if(cur!==epoch)return;customers=new Map((Array.isArray(cs)?cs:[]).map(c=>[c.device_code,c]));customersReady=true}catch(e){customers=new Map();customersReady=false}try{const vs=await rpc('fp_panel_versions');if(cur!==epoch)return;versions=new Map((Array.isArray(vs)?vs:[]).map(v=>[v.device_code,v]))}catch(e){versions=new Map()}render()}
+async function refresh(){const cur=epoch;const rows=await rpc('fp_panel_devices');if(cur!==epoch)return;devices=Array.isArray(rows)?rows:[];try{const cs=await rpc('fp_customers_list');if(cur!==epoch)return;customers=new Map((Array.isArray(cs)?cs:[]).map(c=>[c.device_code,c]));customersReady=true}catch(e){customers=new Map();customersReady=false}try{const vs=await rpc('fp_panel_versions');if(cur!==epoch)return;versions=new Map((Array.isArray(vs)?vs:[]).map(v=>[v.device_code,v]))}catch(e){versions=new Map()}
+if(account&&account.role==='master'){try{const rs=await rpc('fp_partners_list');if(cur!==epoch)return;resellers=Array.isArray(rs)?rs:[]}catch(e){resellers=null}}else{try{myPlan=await rpc('fp_my_plan');if(cur!==epoch)return}catch(e){myPlan=undefined}}
+render();renderPlan();renderResellers()}
+
+/* ---------- planos parceiro ---------- */
+function tone(c){return c==='bad'?'bad-t':c==='soon'?'warn':''}
+function planState(exp){const t=Date.parse(exp);if(!t)return{cls:'',txt:'sem plano'};const days=Math.ceil((t-Date.now())/DAY);if(t<=Date.now())return{cls:'bad',txt:'vencido em '+new Date(t).toLocaleDateString('pt-BR')};if(days<=3)return{cls:'soon',txt:(days<=1?'vence hoje/amanhã':'vence em '+days+' dias')+' ('+new Date(t).toLocaleDateString('pt-BR')+')'};return{cls:'',txt:'vence em '+new Date(t).toLocaleDateString('pt-BR')}}
+function renderPlan(){const box=$('planInfo');if(!box||$('planBox').hidden)return;box.replaceChildren();if(myPlan===undefined){box.append(el('span',{class:'danger',text:'Os planos ainda não foram ativados no banco de dados.'}));return}const p=myPlan||{};if(!p.expires_at){box.append(el('span',{text:'Você ainda não tem um plano ativo. Fale com o seu fornecedor.'}));return}const st=planState(p.expires_at);const used=Number(p.active_devices||0),max=Number(p.max_devices||0);
+box.append(el('b',{text:(p.plan_name||'Plano')+' · Ativos: '+used+' de '+max}),el('br'),el('span',{class:tone(st.cls),text:'Plano '+st.txt}));
+if(st.cls==='bad')box.append(el('br'),el('span',{class:'danger',text:'Seus aparelhos estão parados. Renove o plano para voltarem a funcionar.'}));else if(st.cls==='soon')box.append(el('br'),el('span',{class:'warn',text:'Renove antes do vencimento para os aparelhos não pararem.'}))}
+function renderResellers(){const box=$('resellers');if(!box||$('resellersFold').hidden)return;box.replaceChildren();if(resellers===null){box.append(el('p',{class:'danger',text:'Os planos ainda não foram ativados no banco de dados. Rode o arquivo planos-parceiro.sql.'}));return}if(!resellers.length){box.append(el('p',{text:'Nenhuma revenda cadastrada ainda.'}));return}
+for(const r of resellers){const st=planState(r.expires_at);const card=el('div',{class:'item',style:'padding:12px 14px'});
+card.append(el('b',{text:r.name||r.email||'Revenda'}),el('br'),el('small',{text:(r.email||'')+(r.active?'':' · conta desativada')}),el('p',null,el('span',{text:(r.plan_name||'Sem plano')+' · Ativos: '+(r.active_devices||0)+' de '+(r.max_devices||0)+' · '}),el('span',{class:tone(st.cls),text:st.txt})));
+const sel=el('select',{'aria-label':'Plano'});for(const[n,m]of PLANS){const o=el('option',{value:n+'|'+m,text:n+' (até '+m+')'});if(r.plan_name===n)o.selected=true;sel.append(o)}
+const acts=el('div',{class:'actions'});const go=(months)=>{const[n,m]=sel.value.split('|');const what=months?'Renovar '+(r.name||r.email)+' no plano '+n+' por '+(months===1?'1 mês':months+' meses')+'?':'Mudar '+(r.name||r.email)+' para o plano '+n+' (até '+m+' aparelhos), sem mudar o vencimento?';if(!confirm(what))return;working(acts,async()=>{const x=await rpc('fp_plan_set',{p_partner:r.user_id,p_plan:n,p_max:Number(m),p_months:months});tell('Plano atualizado. Vence em '+new Date(x).toLocaleDateString('pt-BR')+'.');await refresh()})};
+for(const mo of[1,3,6,12])acts.append(el('button',{type:'button',class:'secondary',text:'+'+mo+(mo===1?' mês':' meses'),onclick:()=>go(mo)}));
+acts.append(el('button',{type:'button',class:'secondary',text:'Só mudar plano',onclick:()=>go(0)}));
+card.append(el('label',{text:'Plano'}),sel,acts);box.append(card)}}
 
 /* ---------- tela ---------- */
 function filtered(){const q=fold(ui.q);return devices.filter(d=>{const c=customers.get(d.device_code)||{};const st=statusOf(d);if(ui.chip==='soon'&&st.kind!=='soon')return false;if(ui.chip==='bad'&&st.kind!=='bad')return false;if(ui.chip==='ok'&&st.kind!=='ok')return false;if(ui.chip==='wait'&&st.kind!=='wait')return false;if(ui.server&&serverOf(d)!==ui.server)return false;if(!q)return true;return fold([d.device_code,c.name,c.whatsapp,serverOf(d),c.notes].join(' ')).includes(q)}).sort((a,b)=>{const ea=Date.parse(a.expires_at)||Infinity,eb=Date.parse(b.expires_at)||Infinity;return ea-eb})}
@@ -96,13 +119,18 @@ const wa=waLink(c,d);if(wa)act.append(el('a',{href:wa,target:'_blank',rel:'noope
 if(!$('activation').hidden){for(const m of[1,2,3,6,12]){const label='+'+m+(m===1?' mês':' meses');act.append(el('button',{type:'button',class:'secondary',text:label,onclick:e=>{const exp=Date.parse(d.expires_at),base=new Date(Math.max(exp||0,Date.now())),target=new Date(base);target.setMonth(target.getMonth()+m);if(target.getDate()!==base.getDate())target.setDate(0);const n=Math.max(1,Math.round((target-base)/DAY));if(!confirm('Acrescentar '+(m===1?'1 mês':m+' meses')+' ('+n+' dias) ao aparelho '+d.device_code+'?\nNovo vencimento: '+target.toLocaleDateString('pt-BR')))return;working(e.currentTarget.parentElement,async()=>{const x=await rpc('fp_activate_device',{p_code:d.device_code,p_days:n});tell('Licença atualizada até '+new Date(x).toLocaleString('pt-BR'));await refresh()})}}))}}
 act.append(el('button',{type:'button',class:'secondary',text:'Editar lista / licença',onclick:()=>{$('code').value=d.device_code;$('activationCode').value=d.device_code;$('listName').value=d.playlist_name||'Minha lista';$('listUrl').value=d.playlist_url||'';$('playlistFold').open=true;$('playlistFold').scrollIntoView({behavior:'smooth'});$('listUrl').focus()}}));
 if(!$('activation').hidden){act.append(el('button',{type:'button',class:'danger-btn',text:'Excluir aparelho',onclick:e=>{if(!confirm('Excluir o aparelho '+d.device_code+'? A licença, a lista e os dados do cliente serão apagados.'))return;working(e.currentTarget.parentElement,async()=>{await rpc('fp_delete_device',{p_code:d.device_code});ui.open=null;tell('Aparelho excluído.');await refresh()})}}))}
+if(account&&account.role!=='master'){const live=!d.revoked&&Date.parse(d.expires_at)>Date.now();
+if(live)act.append(el('button',{type:'button',class:'danger-btn',text:'Liberar vaga',onclick:e=>{if(!confirm('Liberar a vaga do aparelho '+d.device_code+'? Ele para de funcionar até ser ativado de novo.'))return;working(e.currentTarget.parentElement,async()=>{await rpc('fp_partner_release',{p_code:d.device_code});tell('Vaga liberada.');await refresh()})}}));
+else act.append(el('button',{type:'button',text:'Ativar no meu plano',onclick:e=>{if(!confirm('Ativar o aparelho '+d.device_code+' no seu plano?'))return;working(e.currentTarget.parentElement,async()=>{const x=await rpc('fp_partner_activate',{p_code:d.device_code});tell('Aparelho ativado até '+new Date(x).toLocaleDateString('pt-BR')+'.');await refresh()})}}))}
 box.append(act);return box}
 
 /* ---------- eventos ---------- */
-$('loginForm').onsubmit=e=>{e.preventDefault();working(e.currentTarget,async()=>{tell('Entrando…');const result=await request('/auth/v1/token?grant_type=password',{email:$('email').value.trim(),password:$('password').value},false);$('password').value='';session={access_token:result.access_token,deadline:Date.now()+result.expires_in*1000};try{const rows=await rpc('fp_my_account');account=rows?.[0];if(!account?.active)throw Error('Sua conta ainda não está autorizada.');$('account').textContent=account.name+' · '+(account.role==='master'?'Master':'Parceiro');$('activation').hidden=account.role!=='master';await refresh();$('login').hidden=true;$('dashboard').hidden=false;tell('Bem-vindo! Toque em um cliente para ver os detalhes.')}catch(e){clearSession();throw e}})};
+$('loginForm').onsubmit=e=>{e.preventDefault();working(e.currentTarget,async()=>{tell('Entrando…');const result=await request('/auth/v1/token?grant_type=password',{email:$('email').value.trim(),password:$('password').value},false);$('password').value='';session={access_token:result.access_token,deadline:Date.now()+result.expires_in*1000};try{const rows=await rpc('fp_my_account');account=rows?.[0];if(!account?.active)throw Error('Sua conta ainda não está autorizada.');$('account').textContent=account.name+' · '+(account.role==='master'?'Master':'Parceiro');$('activation').hidden=account.role!=='master';$('resellersFold').hidden=account.role!=='master';$('planBox').hidden=account.role==='master';await refresh();$('login').hidden=true;$('dashboard').hidden=false;tell('Bem-vindo! Toque em um cliente para ver os detalhes.')}catch(e){clearSession();throw e}})};
 $('playlistForm').onsubmit=e=>{e.preventDefault();working(e.currentTarget,async()=>{const url=new URL($('listUrl').value.trim());if(!['https:','http:'].includes(url.protocol)||url.username||url.password)throw Error('Informe um link HTTP ou HTTPS válido.');await rpc('fp_set_device_playlist',{p_code:$('code').value.trim().toUpperCase(),p_url:url.href,p_name:$('listName').value.trim()});tell('Lista salva! No player, toque em Verificar ativação ou aguarde a próxima consulta.');await refresh()})};
 $('activationForm').onsubmit=e=>{e.preventDefault();working(e.currentTarget,async()=>{const code=$('activationCode').value.trim().toUpperCase(),days=Number($('days').value);if(!confirm('Acrescentar '+days+' dias ao aparelho '+code+'?'))return;const expiry=await rpc('fp_activate_device',{p_code:code,p_days:days});tell('Licença atualizada até '+new Date(expiry).toLocaleString('pt-BR'));await refresh()})};
 $('refresh').onclick=()=>working($('dashboard'),refresh);
+$('partnerActivateForm').onsubmit=e=>{e.preventDefault();working(e.currentTarget,async()=>{const code=$('pCode').value.trim().toUpperCase();if(!confirm('Ativar o aparelho '+code+' no seu plano?'))return;const x=await rpc('fp_partner_activate',{p_code:code});tell('Aparelho ativado até '+new Date(x).toLocaleDateString('pt-BR')+'.');$('pCode').value='';await refresh()})};
+$('addResellerForm').onsubmit=e=>{e.preventDefault();working(e.currentTarget,async()=>{await rpc('fp_partner_add',{p_email:$('rEmail').value.trim(),p_name:$('rName').value.trim()});tell('Revenda adicionada. Agora escolha o plano dela e toque em +1 mês (ou mais).');$('rEmail').value='';$('rName').value='';await refresh()})};
 $('logout').onclick=()=>{const token=session?.access_token;clearSession();tell('Você saiu do painel.');if(token)fetch(base+'/auth/v1/logout',{method:'POST',headers:{apikey:key,Authorization:'Bearer '+token}}).catch(()=>{})};
 $('search').oninput=e=>{ui.q=e.target.value;ui.page=0;render()};
 $('serverFilter').onchange=e=>{ui.server=e.target.value;ui.page=0;render()};
@@ -114,5 +142,5 @@ for(const b of document.querySelectorAll('[data-eye]'))b.onclick=()=>{const i=$(
 
 /* Código do aparelho: separa com ":" automaticamente (também ao colar) */
 (function(){function maskMac(v){const h=String(v).replace(/[^a-fA-F0-9]/g,'').toUpperCase().slice(0,12);return h.replace(/(.{2})(?=.)/g,'$1:')}
-for(const id of ['code','activationCode']){const e=document.getElementById(id);if(!e)continue;e.setAttribute('autocapitalize','characters');e.setAttribute('autocomplete','off');e.setAttribute('spellcheck','false');e.addEventListener('input',()=>{const m=maskMac(e.value);if(e.value!==m)e.value=m})}})();
+for(const id of ['code','activationCode','pCode']){const e=document.getElementById(id);if(!e)continue;e.setAttribute('autocapitalize','characters');e.setAttribute('autocomplete','off');e.setAttribute('spellcheck','false');e.addEventListener('input',()=>{const m=maskMac(e.value);if(e.value!==m)e.value=m})}})();
 </script></html>
