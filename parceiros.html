@@ -87,7 +87,7 @@ footer{padding-block:26px calc(26px + env(safe-area-inset-bottom,0px));border-to
           <option>Mais de 500</option>
         </select></label>
       <label for="msg">Mensagem (opcional)<textarea id="msg" name="Mensagem" maxlength="1000" placeholder="Conte um pouco sobre o seu negócio."></textarea></label>
-      <div class="hp" aria-hidden="true"><label>Não preencha<input id="hp" name="_honey" tabindex="-1" autocomplete="off"></label></div>
+      <div class="hp" aria-hidden="true"><label>Não preencha<input id="hp" name="botcheck" tabindex="-1" autocomplete="off"></label></div>
       <div id="out" role="status" aria-live="polite"></div>
       <button id="send" type="submit">Enviar</button>
       <p class="privacy">Usamos seus dados só para responder ao seu contato.</p>
@@ -109,9 +109,9 @@ footer{padding-block:26px calc(26px + env(safe-area-inset-bottom,0px));border-to
     if(!qtd){show("err","Escolha quantos clientes você atende hoje.");f.qtd.focus();return}
     if(f.hp.value){show("ok","Recebemos o seu contato!");return}
     btn.disabled=true;btn.textContent="Enviando…";out.className="";out.textContent="";
-    fetch("https://formsubmit.co/ajax/contato@foxplayer.com.br",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
-      body:JSON.stringify({"Nome":nome,"WhatsApp":zap,"Clientes atendidos hoje":qtd,"Mensagem":f.msg.value.trim()||"(sem mensagem)","_subject":"Novo interessado em ser parceiro Fox Player: "+nome,"_template":"table","_captcha":"false"})})
-    .then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok||j.success==="false"||j.success===false)throw 0;})})
+    fetch("https://api.web3forms.com/submit",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({"access_key":"e6784b7e-b693-4ac7-abef-13e48058a17f","subject":"Novo interessado em ser parceiro Fox Player: "+nome,"from_name":"Site Fox Player","Nome":nome,"WhatsApp":zap,"Clientes atendidos hoje":qtd,"Mensagem":f.msg.value.trim()||"(sem mensagem)"})})
+    .then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok||j.success===false)throw 0;})})
     .then(function(){f.reset();show("ok","Recebemos o seu contato! Em breve falaremos com você pelo WhatsApp.")})
     .catch(function(){show("err","Não foi possível enviar agora. Confira a internet e tente de novo.")})
     .then(function(){btn.disabled=false;btn.textContent="Enviar"});
