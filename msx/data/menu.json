@@ -33,15 +33,6 @@
             "icon": "support-agent",
             "label": "Suporte",
             "data": "https://foxplayer.com.br/msx/data/suporte.json"
-        },
-        {
-            "type": "separator",
-            "label": "Teste"
-        },
-        {
-            "icon": "science",
-            "label": "Lista de teste",
-            "data": "https://foxplayer.com.br/msx/data/t-e06dfba4edfb.json"
         }
     ]
 }
