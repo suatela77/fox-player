@@ -1,0 +1,18 @@
+{
+    "pages": [
+        {
+            "items": [
+                {
+                    "type": "default",
+                    "layout": "0,0,12,6",
+                    "color": "msx-glass",
+                    "headline": "App para Android",
+                    "text": [
+                        "Baixe o Fox Player para Android (celular e TV Box):{br}{br}",
+                        "{txt:msx-white:foxplayer.com.br}{br}{br}"
+                    ]
+                }
+            ]
+        }
+    ]
+}

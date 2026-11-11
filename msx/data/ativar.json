@@ -1,0 +1,20 @@
+{
+    "pages": [
+        {
+            "items": [
+                {
+                    "type": "default",
+                    "layout": "0,0,12,6",
+                    "color": "msx-glass",
+                    "headline": "Como ativar",
+                    "text": [
+                        "{ico:msx-white:looks-one} Abra o Fox Player no seu aparelho: o código aparece na tela de ativação.{br}{br}",
+                        "{ico:msx-white:looks-two} Envie o código ao seu revendedor.{br}{br}",
+                        "{ico:msx-white:looks-3} A ativação chega sozinha no aparelho.{br}{br}",
+                        "Para ativar ou renovar, fale com o seu revendedor.{br}{br}"
+                    ]
+                }
+            ]
+        }
+    ]
+}

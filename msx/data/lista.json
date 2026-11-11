@@ -1,0 +1,18 @@
+{
+    "pages": [
+        {
+            "items": [
+                {
+                    "type": "default",
+                    "layout": "0,0,12,6",
+                    "color": "msx-glass",
+                    "headline": "Minha lista",
+                    "text": [
+                        "Em breve: carregar a sua lista por aqui.{br}{br}",
+                        "Por enquanto, use o app Fox Player para Android, que já carrega a sua lista automaticamente.{br}{br}"
+                    ]
+                }
+            ]
+        }
+    ]
+}

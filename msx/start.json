@@ -1,0 +1,8 @@
+{
+    "name": "Fox Player",
+    "version": "0.1.0",
+    "parameter": "menu:https://foxplayer.com.br/msx/data/menu.json",
+    "launcher": {
+        "icon": "play-circle"
+    }
+}

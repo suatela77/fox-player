@@ -1,0 +1,19 @@
+{
+    "pages": [
+        {
+            "items": [
+                {
+                    "type": "default",
+                    "layout": "0,0,12,6",
+                    "color": "msx-glass",
+                    "headline": "Bem-vindo ao Fox Player",
+                    "text": [
+                        "Seu player de listas, simples e rápido.{br}{br}",
+                        "{ico:msx-white:play-arrow} Use o menu ao lado para ver como ativar e carregar a sua lista.{br}{br}",
+                        "{ico:msx-white:play-arrow} Site oficial: {txt:msx-white:foxplayer.com.br}{br}{br}"
+                    ]
+                }
+            ]
+        }
+    ]
+}

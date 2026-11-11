@@ -1,0 +1,18 @@
+{
+    "pages": [
+        {
+            "items": [
+                {
+                    "type": "default",
+                    "layout": "0,0,12,6",
+                    "color": "msx-glass",
+                    "headline": "Suporte",
+                    "text": [
+                        "Precisa de ajuda? Fale com o seu revendedor ou acesse:{br}{br}",
+                        "{txt:msx-white:foxplayer.com.br}{br}{br}"
+                    ]
+                }
+            ]
+        }
+    ]
+}

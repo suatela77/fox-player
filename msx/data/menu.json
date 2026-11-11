@@ -1,0 +1,38 @@
+{
+    "headline": "Fox Player",
+    "menu": [
+        {
+            "icon": "home",
+            "label": "Início",
+            "data": "https://foxplayer.com.br/msx/data/inicio.json"
+        },
+        {
+            "type": "separator",
+            "label": "Como usar"
+        },
+        {
+            "icon": "vpn-key",
+            "label": "Como ativar",
+            "data": "https://foxplayer.com.br/msx/data/ativar.json"
+        },
+        {
+            "icon": "playlist-play",
+            "label": "Minha lista",
+            "data": "https://foxplayer.com.br/msx/data/lista.json"
+        },
+        {
+            "icon": "download",
+            "label": "App para Android",
+            "data": "https://foxplayer.com.br/msx/data/app.json"
+        },
+        {
+            "type": "separator",
+            "label": "Ajuda"
+        },
+        {
+            "icon": "support-agent",
+            "label": "Suporte",
+            "data": "https://foxplayer.com.br/msx/data/suporte.json"
+        }
+    ]
+}
