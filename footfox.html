@@ -1,0 +1,66 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>FootFox 26 · Painel</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0c0c0c;color:#eee;font:16px Arial,sans-serif}main{max-width:820px;margin:auto;padding:24px 16px}
+h1{font-style:italic;margin:0 0 4px}h1 span{color:#3ddc84}h2{font-size:21px;margin:6px 0}p{color:#bbb;line-height:1.6;margin:8px 0}
+section{background:#191919;border:1px solid #383838;border-radius:16px;padding:18px;margin:16px 0}
+label{display:block;margin:12px 0 6px}input,select,button{font:inherit;border-radius:9px;padding:12px;min-height:46px}
+input,select{width:100%;background:#101010;border:1px solid #666;color:#fff}
+button{background:#3ddc84;color:#08150e;border:0;font-weight:bold;cursor:pointer;margin:10px 8px 0 0}button:disabled{opacity:.5}button.sec{background:#333;color:#eee}button.del{background:#5a1d1d;color:#ffd6d6}
+[hidden]{display:none!important}#notice{color:#c7f5da;white-space:pre-wrap}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:130px}
+.kpi{display:flex;gap:12px}.kpi div{flex:1;background:#101010;border:1px solid #333;border-radius:12px;padding:12px}.kpi b{display:block;font-size:26px;color:#3ddc84}
+.it{display:flex;gap:10px;align-items:center;border-top:1px solid #2c2c2c;padding:10px 0}.it>span{flex:1}.it small{color:#999}code{font-size:17px;color:#7fe8b0}
+</style>
+<main>
+<h1>Foot<span>Fox</span> 26 · Painel</h1>
+<p id="notice" role="status" aria-live="polite"></p>
+
+<section id="login">
+<h2>Entrar</h2><p>Use o mesmo e-mail e senha do painel do Fox Player (conta Master).</p>
+<form id="loginForm"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required>
+<label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required>
+<button>Entrar</button></form>
+</section>
+
+<div id="dash" hidden>
+<section><h2>Vendas do Premium</h2><div class="kpi"><div>Vendas<b id="kv">0</b></div><div>Total recebido<b id="kt">R$ 0,00</b></div></div>
+<button class="sec" id="reload">Atualizar</button><button class="sec" id="sair">Sair</button></section>
+
+<section><h2>Cupons</h2><p>Desconto em %. Use 100 para Premium de graça. Limite 0 = sem limite.</p>
+<form id="cupForm" class="row"><div><label for="cc">Cupom</label><input id="cc" required placeholder="FOX20" style="text-transform:uppercase"></div>
+<div><label for="cd">Desconto %</label><input id="cd" type="number" min="1" max="100" value="20" required></div>
+<div><label for="cl">Limite de usos</label><input id="cl" type="number" min="0" value="0"></div>
+<div style="flex-basis:100%"><button>Salvar cupom</button></div></form>
+<div id="cupons"></div></section>
+
+<section><h2>Liberar Premium à mão</h2><p>Digite o código do aparelho que aparece na tela Premium do jogo.</p>
+<form id="manForm" class="row"><div><label for="mc">Código do aparelho</label><input id="mc" required placeholder="ABCDE-FGHJK" style="text-transform:uppercase"></div><div style="flex:0"><button>Liberar</button></div></form></section>
+
+<section><h2>Aparelhos com Premium</h2><div id="lista"></div></section>
+</div>
+</main>
+<script>
+const base='https://zrabqvbmpkdupaqjaqpf.supabase.co',key='sb_publishable_mBJOcNCmCsFz0U7KwNwwlw_sXzuVEmC';
+const $=id=>document.getElementById(id),tell=t=>{$('notice').textContent=t};let session=null;
+const brl=v=>'R$ '+Number(v||0).toFixed(2).replace('.',','),dt=v=>new Date(v).toLocaleString('pt-BR');
+async function request(path,body,auth=true){if(auth&&(!session||Date.now()>=session.deadline)){out();throw Error('Sua sessão terminou. Entre novamente.')}
+ const r=await fetch(base+path,{method:'POST',headers:{apikey:key,'Content-Type':'application/json',...(auth?{Authorization:'Bearer '+session.access_token}:{})},body:JSON.stringify(body)});
+ const t=await r.text();let d;try{d=t?JSON.parse(t):null}catch{}if(!r.ok)throw Error(d?.message||d?.error_description||'Não foi possível concluir.');return d}
+const rpc=(n,b={})=>request('/rest/v1/rpc/'+n,b);
+async function working(f,fn){const bs=[...f.querySelectorAll('button')];bs.forEach(b=>b.disabled=true);try{await fn()}catch(e){tell(e.message)}finally{bs.forEach(b=>b.disabled=false)}}
+function el(t,p,...k){const n=document.createElement(t);if(p)for(const[a,v]of Object.entries(p)){if(a==='text')n.textContent=v;else if(a.startsWith('on'))n[a]=v;else n.setAttribute(a,v)}n.append(...k.filter(x=>x!=null));return n}
+async function load(){const d=await rpc('ff_painel');$('kv').textContent=d.vendas;$('kt').textContent=brl(d.total);
+ $('cupons').replaceChildren(...d.cupons.map(c=>el('div',{class:'it'},el('span',null,el('code',{text:c.codigo}),' · '+c.desconto+'% · usos '+c.usos+(c.limite?' de '+c.limite:'')+(c.ativo?'':' · desligado')),
+  el('button',{class:c.ativo?'del':'sec',text:c.ativo?'Desligar':'Ligar',onclick:e=>working(e.target.parentElement,async()=>{await rpc('ff_cupom_salvar',{p_codigo:c.codigo,p_desconto:c.desconto,p_limite:c.limite||0,p_ativo:!c.ativo});await load()})}))));
+ if(!d.cupons.length)$('cupons').append(el('p',{text:'Nenhum cupom ainda.'}));
+ const sh=c=>c.slice(0,5)+'-'+c.slice(5),orig={pagamento:'Pago',cupom:'Cupom',manual:'Liberado à mão'};
+ $('lista').replaceChildren(...d.premium.map(p=>el('div',{class:'it'},el('span',null,el('code',{text:sh(p.device_code)}),el('br'),el('small',{text:orig[p.origem]+(p.cupom?' ('+p.cupom+')':'')+' · '+brl(p.valor)+' · '+dt(p.criado_em)})),
+  el('button',{class:'del',text:'Remover',onclick:e=>{if(confirm('Remover o Premium do aparelho '+sh(p.device_code)+'?'))working(e.target.parentElement,async()=>{await rpc('ff_remover',{p_codigo:p.device_code});await load()})}}))));
+ if(!d.premium.length)$('lista').append(el('p',{text:'Nenhum aparelho ainda.'}))}
+function out(){session=null;$('dash').hidden=true;$('login').hidden=false}
+$('loginForm').onsubmit=e=>{e.preventDefault();working(e.target,async()=>{tell('Entrando…');const r=await request('/auth/v1/token?grant_type=password',{email:$('email').value.trim(),password:$('password').value},false);$('password').value='';
+ session={access_token:r.access_token,deadline:Date.now()+r.expires_in*1000};try{await load()}catch(x){out();throw x}$('login').hidden=true;$('dash').hidden=false;tell('')})};
+$('cupForm').onsubmit=e=>{e.preventDefault();working(e.target,async()=>{const c=$('cc').value.trim().toUpperCase();await rpc('ff_cupom_salvar',{p_codigo:c,p_desconto:+$('cd').value,p_limite:+$('cl').value||0,p_ativo:true});e.target.reset();$('cd').value=20;$('cl').value=0;tell('Cupom '+c+' salvo.');await load()})};
+$('manForm').onsubmit=e=>{e.preventDefault();working(e.target,async()=>{await rpc('ff_ativar_manual',{p_codigo:$('mc').value});e.target.reset();tell('Premium liberado.');await load()})};
+$('reload').onclick=e=>working(e.target.parentElement,load);$('sair').onclick=()=>{request('/auth/v1/logout',{}).catch(()=>{});out();tell('')};
+</script>
