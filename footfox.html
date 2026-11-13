@@ -18,7 +18,7 @@ button{background:#3ddc84;color:#08150e;border:0;font-weight:bold;cursor:pointer
 <section id="login">
 <h2>Entrar</h2><p>Use o e-mail footfox.suporte@gmail.com e a senha do painel.</p>
 <form id="loginForm"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required>
-<label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required>
+<label for="password">Senha</label><div style="position:relative"><input id="password" type="password" autocomplete="current-password" required style="padding-right:60px"><button type="button" id="eye" aria-label="Mostrar senha" style="position:absolute;right:4px;top:4px;margin:0;min-height:38px;width:50px;padding:0;background:#2a2a2a;color:#eee;font-size:20px">👁</button></div>
 <button>Entrar</button></form>
 </section>
 
@@ -62,5 +62,6 @@ $('loginForm').onsubmit=e=>{e.preventDefault();working(e.target,async()=>{tell('
  session={access_token:r.access_token,deadline:Date.now()+r.expires_in*1000};try{await load()}catch(x){out();throw x}$('login').hidden=true;$('dash').hidden=false;tell('')})};
 $('cupForm').onsubmit=e=>{e.preventDefault();working(e.target,async()=>{const c=$('cc').value.trim().toUpperCase();await rpc('ff_cupom_salvar',{p_codigo:c,p_desconto:+$('cd').value,p_limite:+$('cl').value||0,p_ativo:true});e.target.reset();$('cd').value=20;$('cl').value=0;tell('Cupom '+c+' salvo.');await load()})};
 $('manForm').onsubmit=e=>{e.preventDefault();working(e.target,async()=>{await rpc('ff_ativar_manual',{p_codigo:$('mc').value});e.target.reset();tell('Premium liberado.');await load()})};
+$('eye').onclick=()=>{const p=$('password'),v=p.type==='password';p.type=v?'text':'password';$('eye').setAttribute('aria-label',v?'Esconder senha':'Mostrar senha');$('eye').textContent=v?'🙈':'👁'};
 $('reload').onclick=e=>working(e.target.parentElement,load);$('sair').onclick=()=>{request('/auth/v1/logout',{}).catch(()=>{});out();tell('')};
 </script>
