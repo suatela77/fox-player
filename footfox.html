@@ -16,7 +16,7 @@ button{background:#3ddc84;color:#08150e;border:0;font-weight:bold;cursor:pointer
 <p id="notice" role="status" aria-live="polite"></p>
 
 <section id="login">
-<h2>Entrar</h2><p>Use o mesmo e-mail e senha do painel do Fox Player (conta Master).</p>
+<h2>Entrar</h2><p>Use o e-mail footfox.suporte@gmail.com e a senha do painel.</p>
 <form id="loginForm"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required>
 <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" required>
 <button>Entrar</button></form>
@@ -40,7 +40,7 @@ button{background:#3ddc84;color:#08150e;border:0;font-weight:bold;cursor:pointer
 </div>
 </main>
 <script>
-const base='https://zrabqvbmpkdupaqjaqpf.supabase.co',key='sb_publishable_mBJOcNCmCsFz0U7KwNwwlw_sXzuVEmC';
+const base='https://lxflyweiijbqdmandbcs.supabase.co',key='sb_publishable_5r4GlQ0nHvzceJvoivxEwA_KrVNxeFu';
 const $=id=>document.getElementById(id),tell=t=>{$('notice').textContent=t};let session=null;
 const brl=v=>'R$ '+Number(v||0).toFixed(2).replace('.',','),dt=v=>new Date(v).toLocaleString('pt-BR');
 async function request(path,body,auth=true){if(auth&&(!session||Date.now()>=session.deadline)){out();throw Error('Sua sessão terminou. Entre novamente.')}
