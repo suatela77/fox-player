@@ -153,18 +153,27 @@
     return { type: "pages", headline: "{ico:play-circle} " + esc(name || "Minha lista"), background: BG, pages: [{ items: items }] };
   }
 
+  function limpa(n) { var p = String(n).split("|"); return esc(p.length > 1 ? p.slice(1).join("|") : n).replace(/^\s+|\s+$/g, ""); }
+  function capa(g) { for (var i = 0; i < g.items.length && i < 30; i++) if (g.items[i].i) return g.items[i].i; return ""; }
+
   function catPage(id) {
     var list = (cache.cat && cache.cat[id]) || [], c = null, items = [];
     for (var k = 0; k < CATS.length; k++) if (CATS[k].id == id) c = CATS[k];
+    var tv = id == "canais";
     for (var i = 0; i < list.length; i++) {
-      items.push({
-        label: esc(list[i].name), badge: String(list[i].items.length),
+      var it = {
+        titleFooter: limpa(list[i].name), badge: String(list[i].items.length),
         action: "content:request:interaction:g" + list[i].idx + "@" + SELF
-      });
+      };
+      var im = capa(list[i]);
+      if (im) it.image = im;
+      items.push(it);
     }
     return {
-      type: "list", headline: "{ico:" + (c ? c.icone : "folder") + "} " + (c ? c.nome : "Categorias"), background: BG,
-      template: { type: "button", layout: "0,0,4,1", icon: "msx-white-soft:folder", color: "msx-glass" },
+      type: "list", headline: (c ? c.nome : "Categorias"), background: BG,
+      template: tv
+        ? { type: "separate", layout: "0,0,3,2", imageFiller: "fit", icon: "msx-white-soft:live-tv", color: "msx-glass" }
+        : { type: "separate", layout: "0,0,2,4", imageFiller: "cover", icon: "msx-white-soft:movie", color: "msx-glass" },
       items: items
     };
   }
@@ -183,7 +192,7 @@
     var tpl = t == "canais"
       ? { type: "separate", layout: "0,0,2,2", imageFiller: "fit", icon: "msx-white-soft:live-tv", color: "msx-glass" }
       : { type: "separate", layout: "0,0,2,4", imageFiller: "cover", icon: "msx-white-soft:movie", color: "msx-glass" };
-    return { type: "list", headline: esc(g.name), background: BG, template: tpl, items: items };
+    return { type: "list", headline: limpa(g.name), background: BG, template: tpl, items: items };
   }
 
   function Handler() {}
