@@ -1,0 +1,25 @@
+{
+    "type": "pages",
+    "headline": "Fox Player",
+    "background": "https://foxplayer.com.br/msx/fundo-fox.jpg",
+    "action": "link:http://tv.foxplayer.com.br/app/index.html",
+    "ready": {
+        "action": "link:http://tv.foxplayer.com.br/app/index.html"
+    },
+    "template": {
+        "type": "button",
+        "layout": "0,0,4,2",
+        "color": "msx-glass"
+    },
+    "items": [
+        {
+            "layout": "4,2,4,2",
+            "title": "Fox Player",
+            "titleFooter": "Abrir o Fox Player",
+            "icon": "play-circle",
+            "color": "msx-red",
+            "focus": true,
+            "action": "link:http://tv.foxplayer.com.br/app/index.html"
+        }
+    ]
+}

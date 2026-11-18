@@ -204,7 +204,6 @@
     try { ult = parseInt(localStorage.getItem("fox_auto_open") || "0", 10) || 0; } catch (e) {}
     if (agora - ult < 60000) return;
     try { localStorage.setItem("fox_auto_open", String(agora)); } catch (e) {}
-    try { TVXInteractionPlugin.executeAction("info:Abrindo o Fox Player..."); } catch (e) {}
     setTimeout(function () { try { TVXInteractionPlugin.executeAction(APP); } catch (e) { try { TVXInteractionPlugin.executeAction("warn:" + e); } catch (e2) {} } }, 1200);
   }
 

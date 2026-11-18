@@ -1,8 +1,9 @@
 {
     "name": "Fox Player",
     "version": "0.1.0",
-    "parameter": "menu:request:interaction:menu@https://foxplayer.com.br/msx/plugin.html",
+    "parameter": "content:https://foxplayer.com.br/msx/data/abrir.json",
     "launcher": {
         "icon": "play-circle"
-    }
+    },
+    "welcome": "none"
 }
