@@ -56,7 +56,7 @@
       headline: headline, text: lines.join("{br}{br}")
     }];
     if (extra) items = items.concat(extra);
-    return { type: "pages", headline: "Fox Player", pages: [{ items: items }] };
+    return { type: "pages", headline: "Fox Player", background: BG, pages: [{ items: items }] };
   }
 
   function codigoPage(d, titulo) {
@@ -114,7 +114,8 @@
     tenta(alt || url, !alt);
   }
 
-  var BG = "https://foxplayer.com.br/msx/fundo.jpg";
+  var BG = "https://foxplayer.com.br/msx/fundo-fox.jpg";
+  var IMG = "https://foxplayer.com.br/msx/img/";
   var CATS = [
     { id: "canais", nome: "TV ao vivo", icone: "live-tv", cor: "msx-red" },
     { id: "filmes", nome: "Filmes", icone: "movie", cor: "msx-blue" },
@@ -136,21 +137,23 @@
   }
   function total(list) { var n = 0; for (var i = 0; i < list.length; i++) n += list[i].items.length; return n; }
 
-  function homePage(name, groups) {
-    var cat = cache.cat = separa(groups), items = [], x = 0;
+  function homePage(name, groups, r) {
+    var cat = cache.cat = separa(groups), items = [];
     for (var i = 0; i < CATS.length; i++) {
       var c = CATS[i], n = total(cat[c.id]);
-      if (!n) continue;
       items.push({
-        type: "button", layout: (x * 4) + ",0,4,4", color: c.cor,
-        icon: c.icone, iconSize: "large",
-        headline: c.nome, text: n + (c.id == "canais" ? " canais" : " títulos"),
-        action: "content:request:interaction:c:" + c.id + "@" + SELF
+        type: "default", layout: (i * 3) + ",0,3,4", image: IMG + c.id + ".jpg", imageFiller: "cover",
+        action: n ? "content:request:interaction:c:" + c.id + "@" + SELF : "info:Nenhum conteúdo nesta categoria."
       });
-      x++;
     }
-    items.push({ type: "space", layout: "0,4,12,2", text: "{ico:msx-white-soft:info} Escolha uma categoria. Use {txt:msx-white:Voltar} no controle para retornar." });
-    return { type: "pages", headline: "{ico:play-circle} " + esc(name || "Minha lista"), background: BG, pages: [{ items: items }] };
+    items.push({
+      type: "default", layout: "9,0,3,4", image: IMG + "ativar.jpg", imageFiller: "cover",
+      action: "content:request:interaction:ativar@" + SELF
+    });
+    var st = r && r.expires_at ? "{ico:msx-green:check-circle} Ativo até " + data(r.expires_at) + "   " : "";
+    items.push({ type: "space", layout: "0,4,12,2",
+      text: st + "Código do aparelho: {txt:msx-yellow:" + esc(r && r.device_code) + "}{br}{ico:msx-white-soft:info} Use as setas e OK. {txt:msx-white:Voltar} retorna." });
+    return { type: "pages", headline: "{ico:play-circle} " + esc(name || "Fox Player"), background: BG, pages: [{ items: items }] };
   }
 
   function limpa(n) { var p = String(n).split("|"); return esc(p.length > 1 ? p.slice(1).join("|") : n).replace(/^\s+|\s+$/g, ""); }
@@ -208,7 +211,7 @@
           "Ainda não há lista cadastrada para este aparelho. Peça ao seu revendedor para colocar a lista no painel.",
           "Código deste aparelho: {txt:msx-yellow:" + esc(r.device_code) + "}"
         ]));
-        loadList(pl.url, function (g) { callback(homePage(pl.name, g)); }, function (e) { callback(erroPage(e)); });
+        loadList(pl.url, function (g) { callback(homePage(pl.name, g, r)); }, function (e) { callback(erroPage(e)); });
       }, function (e) { callback(erroPage("Sem resposta do painel (" + e + ").")); });
     } else if (/^c:/.test(dataId) && cache.cat) {
       callback(catPage(dataId.substring(2)));

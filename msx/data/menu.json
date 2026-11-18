@@ -2,14 +2,14 @@
     "headline": "Fox Player",
     "menu": [
         {
+            "icon": "play-circle",
+            "label": "Fox Player",
+            "data": "request:interaction:lista@https://foxplayer.com.br/msx/plugin.html"
+        },
+        {
             "icon": "home",
             "label": "Início",
             "data": "https://foxplayer.com.br/msx/data/inicio.json"
-        },
-        {
-            "icon": "tv",
-            "label": "Fox Player completo",
-            "data": "https://foxplayer.com.br/msx/data/completo.json"
         },
         {
             "type": "separator",
@@ -19,11 +19,6 @@
             "icon": "vpn-key",
             "label": "Como ativar",
             "data": "request:interaction:ativar@https://foxplayer.com.br/msx/plugin.html"
-        },
-        {
-            "icon": "playlist-play",
-            "label": "Minha lista",
-            "data": "request:interaction:lista@https://foxplayer.com.br/msx/plugin.html"
         },
         {
             "icon": "download",
@@ -40,6 +35,6 @@
             "data": "https://foxplayer.com.br/msx/data/suporte.json"
         }
     ],
-    "background": "https://foxplayer.com.br/msx/fundo.jpg",
+    "background": "https://foxplayer.com.br/msx/fundo-fox.jpg",
     "logo": "https://foxplayer.com.br/logo.webp"
 }
