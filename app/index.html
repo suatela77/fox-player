@@ -876,4 +876,11 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden)chec
 // Funções puras expostas apenas para validação desta versão de teste.
 window.FoxPlayerTest={parseM3U:parseM3U,classify:classify,episodeParts:episodeParts,seriesRoots:seriesRoots};
 })();
-</script></body></html>
+</script><script>
+/* MSX/navegador: o botão Voltar do controle fica dentro do app */
+(function(){try{var last=0;document.addEventListener('keydown',function(e){if(e.keyCode===461||e.keyCode===27)last=Date.now()},true);
+history.replaceState({fox:0},'');history.pushState({fox:1},'');
+window.addEventListener('popstate',function(){if(Date.now()-last<400){history.pushState({fox:1},'');return}
+if(typeof back==='function'&&back()){history.pushState({fox:1},'')}else{history.back()}})}catch(e){}})();
+</script>
+</body></html>
