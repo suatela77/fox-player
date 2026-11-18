@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Fox Player MSX</title>
+<script type="text/javascript" src="https://msx.benzac.de/js/tvx-plugin.min.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+/* Fox Player para Media Station X: ativação do aparelho e lista do cliente.
+   Escrito em ES5 para funcionar nos navegadores antigos das TVs. */
+(function () {
+  var ENDPOINT = "https://zrabqvbmpkdupaqjaqpf.supabase.co/functions/v1/fox-player-device";
+  var KEY = "sb_publishable_mBJOcNCmCsFz0U7KwNwwlw_sXzuVEmC";
+  var SELF = "https://foxplayer.com.br/msx/plugin.html";
+  var cache = { url: "", groups: null, at: 0 };
+
+  function secret() {
+    var s = "";
+    try { s = localStorage.getItem("fox_msx_secret") || ""; } catch (e) {}
+    if (/^[a-f0-9]{64}$/.test(s)) return s;
+    s = "";
+    var arr = null;
+    try { arr = new Uint8Array(32); (window.crypto || window.msCrypto).getRandomValues(arr); } catch (e) { arr = null; }
+    for (var i = 0; i < 32; i++) {
+      var b = arr ? arr[i] : Math.floor(Math.random() * 256);
+      s += (b < 16 ? "0" : "") + b.toString(16);
+    }
+    try { localStorage.setItem("fox_msx_secret", s); } catch (e) {}
+    return s;
+  }
+
+  function xhr(method, url, body, headers, ok, fail) {
+    var x = new XMLHttpRequest();
+    x.open(method, url, true);
+    x.timeout = 30000;
+    if (headers) for (var k in headers) x.setRequestHeader(k, headers[k]);
+    x.onload = function () { if (x.status >= 200 && x.status < 300) ok(x.responseText); else fail("HTTP " + x.status); };
+    x.onerror = function () { fail("rede"); };
+    x.ontimeout = function () { fail("tempo"); };
+    x.send(body || null);
+  }
+
+  function register(ok, fail) {
+    xhr("POST", ENDPOINT, JSON.stringify({ action: "register", secret: secret() }),
+      { "Content-Type": "application/json", "apikey": KEY },
+      function (t) { try { ok(JSON.parse(t)); } catch (e) { fail("resposta"); } }, fail);
+  }
+
+  function esc(t) { return String(t == null ? "" : t).replace(/[{}]/g, ""); }
+  function data(d) { var p = String(d || "").split("T")[0].split("-"); return p.length == 3 ? p[2] + "/" + p[1] + "/" + p[0] : ""; }
+
+  function page(headline, lines, extra) {
+    var items = [{
+      type: "default", layout: "0,0,12,6", color: "msx-glass",
+      headline: headline, text: lines.join("{br}{br}")
+    }];
+    if (extra) items = items.concat(extra);
+    return { type: "pages", headline: "Fox Player", pages: [{ items: items }] };
+  }
+
+  function codigoPage(d, titulo) {
+    var code = esc(d && d.device_code) || "—";
+    var lines = [
+      "{txt:msx-white:Código deste aparelho:}",
+      "{txt:msx-yellow:" + code + "}",
+      "Envie este código ao seu revendedor para ativar ou renovar.",
+      "Depois de ativado, abra de novo {txt:msx-white:Minha lista}."
+    ];
+    if (d && d.active && d.expires_at) lines.splice(2, 0, "{ico:msx-green:check-circle} Ativo até " + data(d.expires_at));
+    else if (d) lines.splice(2, 0, "{ico:msx-red:error} " + (d.status == "expired" ? "Ativação vencida" : "Aparelho ainda não ativado"));
+    return page(titulo || "Como ativar", lines);
+  }
+
+  function erroPage(msg) {
+    return page("Não foi possível carregar", [
+      "{ico:msx-red:error} " + esc(msg),
+      "Confira a internet da TV e tente de novo. Se continuar, fale com o suporte."
+    ]);
+  }
+
+  function parseM3U(text) {
+    var lines = text.split(/\r?\n/), groups = [], idx = {}, cur = null;
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i].replace(/^\s+|\s+$/g, "");
+      if (!l) continue;
+      if (l.indexOf("#EXTINF") === 0) {
+        var g = (l.match(/group-title="([^"]*)"/) || [])[1] || "Outros";
+        var logo = (l.match(/tvg-logo="([^"]*)"/) || [])[1] || "";
+        var c = l.lastIndexOf(",");
+        cur = { n: c >= 0 ? l.substring(c + 1) : "Canal", g: g, i: logo };
+      } else if (l.charAt(0) != "#" && cur) {
+        cur.u = l;
+        if (!(cur.g in idx)) { idx[cur.g] = groups.length; groups.push({ name: cur.g, items: [] }); }
+        groups[idx[cur.g]].items.push(cur);
+        cur = null;
+      }
+    }
+    return groups;
+  }
+
+  function loadList(url, ok, fail) {
+    if (cache.url == url && cache.groups && (new Date().getTime() - cache.at) < 6 * 3600000) return ok(cache.groups);
+    var alt = (location.protocol == "https:" && /^http:/i.test(url)) ? url.replace(/^http:/i, "https:") : "";
+    var tenta = function (u, ultimo) {
+    xhr("GET", u, null, null, function (t) {
+      if (t.indexOf("#EXTM3U") < 0 && t.indexOf("#EXTINF") < 0) return fail("A lista não está no formato M3U.");
+      var g = parseM3U(t);
+      if (!g.length) return fail("A lista está vazia.");
+      cache = { url: url, groups: g, at: new Date().getTime() };
+      ok(g);
+    }, function (e) { if (!ultimo) tenta(url, true); else fail("O servidor da lista não respondeu (" + e + ")."); });
+    };
+    tenta(alt || url, !alt);
+  }
+
+  function groupsPage(name, groups) {
+    var items = [];
+    for (var i = 0; i < groups.length; i++) {
+      items.push({
+        label: esc(groups[i].name), badge: String(groups[i].items.length),
+        action: "content:request:interaction:g" + i + "@" + SELF
+      });
+    }
+    return {
+      type: "list", headline: esc(name || "Minha lista"),
+      template: { type: "button", layout: "0,0,6,1", icon: "folder" },
+      items: items
+    };
+  }
+
+  function playUrl(u) { return "video:" + u; }
+
+  function channelsPage(g) {
+    var items = [], max = Math.min(g.items.length, 2000);
+    for (var i = 0; i < max; i++) {
+      var c = g.items[i];
+      var it = { titleHeader: esc(c.n), action: playUrl(c.u) };
+      if (c.i) it.image = c.i;
+      items.push(it);
+    }
+    return {
+      type: "list", headline: esc(g.name),
+      template: { type: "separate", layout: "0,0,2,3", imageFiller: "default", icon: "msx-white-soft:live-tv", color: "msx-glass" },
+      items: items
+    };
+  }
+
+  function Handler() {}
+  Handler.prototype.handleRequest = function (dataId, d, callback) {
+    if (dataId == "ativar") {
+      register(function (r) { callback(codigoPage(r)); }, function (e) { callback(erroPage("Sem resposta do painel (" + e + ").")); });
+    } else if (dataId == "lista") {
+      register(function (r) {
+        if (!r.active) return callback(codigoPage(r, "Minha lista"));
+        var pl = r.playlist;
+        if (!pl || !pl.url) return callback(page("Minha lista", [
+          "{ico:msx-green:check-circle} Aparelho ativo.",
+          "Ainda não há lista cadastrada para este aparelho. Peça ao seu revendedor para colocar a lista no painel.",
+          "Código deste aparelho: {txt:msx-yellow:" + esc(r.device_code) + "}"
+        ]));
+        loadList(pl.url, function (g) { callback(groupsPage(pl.name, g)); }, function (e) { callback(erroPage(e)); });
+      }, function (e) { callback(erroPage("Sem resposta do painel (" + e + ").")); });
+    } else if (/^g\d+$/.test(dataId) && cache.groups) {
+      var g = cache.groups[parseInt(dataId.substring(1), 10)];
+      callback(g ? channelsPage(g) : erroPage("Grupo não encontrado."));
+    } else {
+      callback(erroPage("Abra de novo pelo menu Minha lista."));
+    }
+  };
+
+  TVXPluginTools.onReady(function () {
+    TVXInteractionPlugin.setupHandler(new Handler());
+    TVXInteractionPlugin.init();
+  });
+})();
+</script>
+</body>
+</html>

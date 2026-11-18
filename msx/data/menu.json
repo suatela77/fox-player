@@ -13,12 +13,12 @@
         {
             "icon": "vpn-key",
             "label": "Como ativar",
-            "data": "https://foxplayer.com.br/msx/data/ativar.json"
+            "data": "request:interaction:ativar@https://foxplayer.com.br/msx/plugin.html"
         },
         {
             "icon": "playlist-play",
             "label": "Minha lista",
-            "data": "https://foxplayer.com.br/msx/data/lista.json"
+            "data": "request:interaction:lista@https://foxplayer.com.br/msx/plugin.html"
         },
         {
             "icon": "download",
