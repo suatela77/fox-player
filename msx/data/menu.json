@@ -2,6 +2,11 @@
     "headline": "Fox Player",
     "menu": [
         {
+            "icon": "science",
+            "label": "Teste Fox Player",
+            "data": "https://foxplayer.com.br/msx/data/completo.json"
+        },
+        {
             "icon": "play-circle",
             "label": "Fox Player",
             "data": "request:interaction:lista@https://foxplayer.com.br/msx/plugin.html"
