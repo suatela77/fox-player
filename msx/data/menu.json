@@ -7,6 +7,11 @@
             "data": "https://foxplayer.com.br/msx/data/inicio.json"
         },
         {
+            "icon": "tv",
+            "label": "Fox Player completo",
+            "data": "https://foxplayer.com.br/msx/data/completo.json"
+        },
+        {
             "type": "separator",
             "label": "Como usar"
         },

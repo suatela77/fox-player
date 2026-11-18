@@ -1,0 +1,23 @@
+{
+    "type": "pages",
+    "headline": "Fox Player completo",
+    "background": "https://foxplayer.com.br/msx/fundo.jpg",
+    "pages": [{
+        "items": [
+            {
+                "type": "button", "layout": "0,0,6,3", "color": "msx-red",
+                "icon": "play-circle", "iconSize": "large",
+                "headline": "Abrir o Fox Player",
+                "text": "O mesmo aplicativo da TV LG, com capas e o layout completo.",
+                "action": "video:plugin:https://foxplayer.com.br/app/index.html"
+            },
+            {
+                "type": "button", "layout": "6,0,6,3", "color": "msx-blue",
+                "icon": "open-in-new", "iconSize": "large",
+                "headline": "Abrir no navegador",
+                "text": "Use esta opção se a de cima não responder ao controle.",
+                "action": "link:window:https://foxplayer.com.br/app/index.html"
+            }
+        ]
+    }]
+}
