@@ -881,6 +881,6 @@ window.FoxPlayerTest={parseM3U:parseM3U,classify:classify,episodeParts:episodePa
 (function(){try{var last=0;document.addEventListener('keydown',function(e){if(e.keyCode===461||e.keyCode===27)last=Date.now()},true);
 history.replaceState({fox:0},'');history.pushState({fox:1},'');
 window.addEventListener('popstate',function(){if(Date.now()-last<400){history.pushState({fox:1},'');return}
-if(typeof back==='function'&&back()){history.pushState({fox:1},'')}else{history.back()}})}catch(e){}})();
+var g=function(i){var x=document.getElementById(i);return x&&!x.hidden};var open=false,ov=document.querySelectorAll('.overlay,[role=dialog]');for(var i=0;i<ov.length;i++)if(!ov[i].hidden)open=true;if(!open&&g('home')&&!g('catalog')&&!g('player')){history.back();return}var ev=document.createEvent('Event');ev.initEvent('keydown',true,true);ev.keyCode=27;ev.which=27;try{Object.defineProperty(ev,'keyCode',{get:function(){return 27}})}catch(e){}(document.activeElement||document).dispatchEvent(ev);history.pushState({fox:1},'')})}catch(e){}})();
 </script>
 </body></html>
