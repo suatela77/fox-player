@@ -2,22 +2,20 @@
     "type": "pages",
     "headline": "Fox Player",
     "background": "https://foxplayer.com.br/msx/fundo-fox.jpg",
-    "pages": [{
-        "items": [
-            {
-                "type": "button", "layout": "0,0,6,3", "color": "msx-red",
-                "icon": "play-circle", "iconSize": "large",
-                "headline": "Teste A",
-                "text": "Abrir o Fox Player (mesma janela)",
-                "action": "link:http://tv.foxplayer.com.br/app/index.html"
-            },
-            {
-                "type": "button", "layout": "6,0,6,3", "color": "msx-blue",
-                "icon": "open-in-new", "iconSize": "large",
-                "headline": "Teste B",
-                "text": "Abrir o Fox Player (janela separada)",
-                "action": "link:window:https://foxplayer.com.br/app/index.html"
-            }
-        ]
-    }]
+    "pages": [
+        {
+            "items": [
+                {
+                    "type": "button",
+                    "layout": "3,1,6,3",
+                    "color": "msx-red",
+                    "icon": "play-circle",
+                    "iconSize": "large",
+                    "headline": "Abrir o Fox Player",
+                    "text": "Canais, filmes e séries com o layout completo do Fox Player.",
+                    "action": "link:http://tv.foxplayer.com.br/app/index.html"
+                }
+            ]
+        }
+    ]
 }

@@ -2,14 +2,9 @@
     "headline": "Fox Player",
     "menu": [
         {
-            "icon": "science",
-            "label": "Teste Fox Player",
-            "data": "https://foxplayer.com.br/msx/data/completo.json"
-        },
-        {
             "icon": "play-circle",
             "label": "Fox Player",
-            "data": "request:interaction:lista@https://foxplayer.com.br/msx/plugin.html"
+            "data": "https://foxplayer.com.br/msx/data/completo.json"
         },
         {
             "icon": "home",
@@ -19,11 +14,6 @@
         {
             "type": "separator",
             "label": "Como usar"
-        },
-        {
-            "icon": "vpn-key",
-            "label": "Como ativar",
-            "data": "request:interaction:ativar@https://foxplayer.com.br/msx/plugin.html"
         },
         {
             "icon": "download",

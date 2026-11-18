@@ -883,6 +883,14 @@ history.replaceState({fox:0},'');history.pushState({fox:1},'');
 window.addEventListener('popstate',function(){if(Date.now()-last<400){history.pushState({fox:1},'');return}
 var g=function(i){var x=document.getElementById(i);return x&&!x.hidden};var open=false,ov=document.querySelectorAll('.overlay,[role=dialog]');for(var i=0;i<ov.length;i++)if(!ov[i].hidden)open=true;if(!open&&g('home')&&!g('catalog')&&!g('player')){history.back();return}var ev=document.createEvent('Event');ev.initEvent('keydown',true,true);ev.keyCode=27;ev.which=27;try{Object.defineProperty(ev,'keyCode',{get:function(){return 27}})}catch(e){}(document.activeElement||document).dispatchEvent(ev);history.pushState({fox:1},'')})}catch(e){}})();
 </script>
-<div id="foxProto" style="position:fixed;right:8px;top:4px;z-index:99999;font:14px Arial;color:#ffd54a;background:rgba(0,0,0,.55);padding:2px 6px;border-radius:4px"></div>
-<script>try{document.getElementById('foxProto').textContent=location.protocol.replace(':','')+' · '+navigator.userAgent.replace(/.*Chrom(e|ium)\/(\d+).*/,'Chrome $2').slice(0,40)}catch(e){}</script>
+<style id="fox720">
+@media (max-height:800px){
+ html body #reloadBtn{font-size:20px!important;padding:6px 22px!important;min-height:0!important;height:44px!important}
+ html body #homeReservations{font-size:16px!important;padding:4px 14px!important;height:40px!important;margin:0 0 0 10px!important}
+ html body #homeMessage{bottom:180px!important;font-size:15px!important}
+ html body #deviceCode{font-size:30px!important;letter-spacing:2px!important}
+ html body .home-status{font-size:16px!important}
+ html body .device{font-size:16px!important}
+}
+</style>
 </body></html>
