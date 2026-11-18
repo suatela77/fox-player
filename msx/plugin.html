@@ -204,7 +204,7 @@
     try { ult = parseInt(localStorage.getItem("fox_auto_open") || "0", 10) || 0; } catch (e) {}
     if (agora - ult < 120000) return;
     try { localStorage.setItem("fox_auto_open", String(agora)); } catch (e) {}
-    setTimeout(function () { try { TVXInteractionPlugin.executeAction(APP); } catch (e) {} }, 800);
+    try { TVXInteractionPlugin.executeAction(APP); } catch (e) {}
   }
 
   function Handler() {}
@@ -212,12 +212,18 @@
     if (dataId == "menu") {
       xhr("GET", "https://foxplayer.com.br/msx/data/menu.json?t=" + new Date().getTime(), null, null, function (t) {
         var m = null; try { m = JSON.parse(t); } catch (e) {}
-        callback(m || { headline: "Fox Player", menu: [{ icon: "play-circle", label: "Fox Player", data: "https://foxplayer.com.br/msx/data/completo.json" }] });
-        autoAbrir();
+        m = m || { headline: "Fox Player", menu: [] };
+        if (m.menu && m.menu.length && m.menu[0].label == "Fox Player") m.menu[0].data = "request:interaction:abrir@" + SELF;
+        callback(m);
       }, function () {
-        callback({ headline: "Fox Player", menu: [{ icon: "play-circle", label: "Fox Player", data: "https://foxplayer.com.br/msx/data/completo.json" }] });
-        autoAbrir();
+        callback({ headline: "Fox Player", menu: [{ icon: "play-circle", label: "Fox Player", data: "request:interaction:abrir@" + SELF }] });
       });
+    } else if (dataId == "abrir") {
+      callback({ type: "pages", headline: "Fox Player", background: BG, pages: [{ items: [
+        { type: "button", layout: "3,1,6,3", color: "msx-red", icon: "play-circle", iconSize: "large",
+          headline: "Abrir o Fox Player", text: "Abrindo o Fox Player... Se não abrir sozinho, aperte OK aqui.",
+          action: APP }] }] });
+      setTimeout(autoAbrir, 700);
     } else if (dataId == "ativar") {
       register(function (r) { callback(codigoPage(r)); }, function (e) { callback(erroPage("Sem resposta do painel (" + e + ").")); });
     } else if (dataId == "lista") {
