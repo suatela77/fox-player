@@ -9,7 +9,7 @@
                 "icon": "play-circle", "iconSize": "large",
                 "headline": "Teste A",
                 "text": "Abrir o Fox Player (mesma janela)",
-                "action": "link:https://foxplayer.com.br/app/index.html"
+                "action": "link:http://foxplayer.com.br/app/index.html"
             },
             {
                 "type": "button", "layout": "6,0,6,3", "color": "msx-blue",
