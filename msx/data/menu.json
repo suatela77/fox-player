@@ -34,5 +34,7 @@
             "label": "Suporte",
             "data": "https://foxplayer.com.br/msx/data/suporte.json"
         }
-    ]
+    ],
+    "background": "https://foxplayer.com.br/msx/fundo.jpg",
+    "logo": "https://foxplayer.com.br/logo.webp"
 }
