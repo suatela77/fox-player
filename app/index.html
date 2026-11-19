@@ -460,7 +460,7 @@ header .brand{display:block;background:none;border:0;box-shadow:none;padding:0;l
 </div></div></section></main><footer class="foot"><span>↑ ↓ ← → Navegar · OK Selecionar · Voltar Retornar</span><span>Fox Player · Teste de interface e reprodução</span></footer>
 <section id="connect" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="connectTitle"><div class="panel"><div class="eyebrow">Conectar conteúdo próprio</div><h2 id="connectTitle">Adicionar sua lista</h2><div class="tabs"><button id="m3uTab" aria-pressed="true">Link ou arquivo M3U</button><button id="xtreamTab" aria-pressed="false">Xtream Codes</button></div>
 <form id="sourceForm"><label for="sourceName">Nome da lista</label><input id="sourceName" maxlength="80" placeholder="Minha lista" autocomplete="off"><div id="m3uFields"><label for="m3uUrl">Link M3U / M3U8</label><input id="m3uUrl" type="url" placeholder="https://servidor/lista.m3u" autocomplete="off"><p class="muted">Ou cole o conteúdo de um arquivo M3U:</p><textarea id="m3uText" placeholder="#EXTM3U" aria-label="Conteúdo M3U"></textarea><label for="m3uFile">Abrir arquivo (pelo celular)</label><input id="m3uFile" type="file" accept=".m3u,.m3u8,text/plain"></div><div id="xtreamFields" hidden><label for="server">Endereço do servidor</label><input id="server" type="url" placeholder="https://servidor:porta" autocomplete="off"><label for="username">Usuário</label><input id="username" autocomplete="off"><label for="password">Senha</label><input id="password" type="password" autocomplete="off"></div><label class="check"><input id="remember" type="checkbox">Lembrar lista e acesso neste aparelho</label><p>Use apenas em aparelho de confiança. Os dados salvos neste navegador podem conter a senha da lista. Os dados da lista ficam neste navegador. O servidor Fox recebe apenas a identificação da instalação para consultar a licença.</p><p id="connectStatus" role="status"></p><div class="actions"><button class="primary" id="submitSource" type="submit">Conectar lista</button><button type="button" id="closeConnect">Cancelar</button></div></form></div></section>
-<section id="settings" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="panel"><div class="eyebrow">Fox Player</div><h2 id="settingsTitle">Ajustes e informações</h2><p>Versão 0.7.17-web8</p><div id="deviceHelp" hidden></div><p id="settingsStatus"></p><div class="actions"><button id="forget" class="danger">Apagar lista e dados salvos</button><button id="closeSettings" class="primary">Voltar</button></div></div></section>
+<section id="settings" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="panel"><div class="eyebrow">Fox Player</div><h2 id="settingsTitle">Ajustes e informações</h2><p>Versão 0.7.17-web9</p><div id="deviceHelp" hidden></div><p id="settingsStatus"></p><div class="actions"><button id="forget" class="danger">Apagar lista e dados salvos</button><button id="closeSettings" class="primary">Voltar</button></div></div></section>
 <section id="player" class="player" hidden role="dialog" aria-modal="true" aria-label="Reprodutor"><video id="video" playsinline preload="none" tabindex="-1"></video><div class="playerbar"><div class="actions"><strong id="playingTitle"></strong><button id="togglePlay">Pausar / continuar</button><button id="voiceBtn">🗣 Realçar voz</button><button id="tryHls" hidden>Testar formato HLS</button><button id="favoriteBtn">☆ Favoritar</button><button id="fullscreen">Tela cheia</button><button id="closePlayer">← Voltar</button></div><p id="playerStatus" role="status"></p></div></section>
 <section id="categoryDialog" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="categoryTitle"><div class="panel"><h2 id="categoryTitle">Escolher categoria</h2><div id="categoryOptions"></div><div class="actions"><button id="closeCategories">← Voltar</button></div></div></section><script src="mpegts.min.js"></script>
 <script>
@@ -960,25 +960,32 @@ var g=function(i){var x=document.getElementById(i);return x&&!x.hidden};var open
 })();
 </script>
 <script>
-/* Segurar OK em um item da lista marca ou desmarca como favorito */
+/* Segurar OK por 2 segundos em um item da lista marca ou desmarca como favorito.
+   Funciona com controles que, ao segurar, mandam um único keydown ou vários pares keydown/keyup. */
 (function(){
-  var t=null,alvo=null,longo=false,toastT=null;
+  var alvo=null,inicio=0,ultimoDown=0,feito=false,clicar=null,vigia=null,toastT=null,SEGURAR=2000,REPETE=350;
   function aviso(txt){var d=document.getElementById('foxToast');if(!d){d=document.createElement('div');d.id='foxToast';d.style.cssText='position:fixed;left:50%;top:40px;transform:translateX(-50%);z-index:999999;background:rgba(20,10,20,.92);color:#fff;font:700 24px Arial,sans-serif;padding:16px 28px;border-radius:14px;border:2px solid #e8742a;max-width:80%;text-align:center;display:none';document.body.appendChild(d)}d.textContent=txt;d.style.display='block';clearTimeout(toastT);toastT=setTimeout(function(){d.style.display='none'},3000)}
   function card(el){while(el&&el!==document.body){if(el.getAttribute&&el.getAttribute('data-catalog-index')!=null&&el.parentNode&&el.parentNode.id==='grid')return el;el=el.parentNode}return null}
+  function favoritar(){feito=true;var r=window.__foxFavAt&&window.__foxFavAt(parseInt(alvo.getAttribute('data-catalog-index'),10));if(r)aviso(r.on?'★ '+r.name+' adicionado aos Favoritos':'☆ '+r.name+' removido dos Favoritos')}
+  function reinicia(){alvo=null;feito=false;clearTimeout(vigia);vigia=null}
   document.addEventListener('keydown',function(e){
     if(e.keyCode!==13)return;var c=card(document.activeElement);if(!c)return;
     var pl=document.getElementById('player');if(pl&&!pl.hidden&&!pl.classList.contains('preview'))return;
     e.preventDefault();e.stopImmediatePropagation();
-    if(e.repeat||t)return;
-    alvo=c;longo=false;
-    t=setTimeout(function(){longo=true;t=null;var r=window.__foxFavAt&&window.__foxFavAt(parseInt(alvo.getAttribute('data-catalog-index'),10));if(r)aviso(r.on?'★ '+r.name+' adicionado aos Favoritos':'☆ '+r.name+' removido dos Favoritos')},2000);
+    var agora=Date.now();
+    if(clicar){clearTimeout(clicar);clicar=null}
+    var ci=c.getAttribute('data-catalog-index');if(!alvo||alvo.getAttribute('data-catalog-index')!==ci||agora-ultimoDown>REPETE+250){reinicia();inicio=agora}alvo=c;
+    ultimoDown=agora;
+    if(!feito&&agora-inicio>=SEGURAR)favoritar();
+    clearTimeout(vigia);vigia=setTimeout(function(){if(alvo&&!feito&&Date.now()-inicio>=SEGURAR-50)favoritar()},Math.max(0,SEGURAR-(agora-inicio)));
   },true);
   document.addEventListener('keyup',function(e){
     if(e.keyCode!==13||!alvo)return;
     e.preventDefault();e.stopImmediatePropagation();
-    if(t){clearTimeout(t);t=null}
-    var c=alvo;alvo=null;
-    if(!longo)c.click();
+    if(feito){clicar=setTimeout(function(){clicar=null;if(Date.now()-ultimoDown>=REPETE-20)reinicia()},REPETE);return}
+    clearTimeout(vigia);vigia=null;
+    var c=alvo;
+    var idx=c.getAttribute('data-catalog-index');clicar=setTimeout(function(){clicar=null;if(Date.now()-ultimoDown>=REPETE-20){reinicia();var atual=document.querySelector('#grid [data-catalog-index="'+idx+'"]')||c;atual.click()}},REPETE);
   },true);
 })();
 </script>

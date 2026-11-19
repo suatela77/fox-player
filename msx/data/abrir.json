@@ -2,9 +2,9 @@
     "type": "pages",
     "headline": "Fox Player",
     "background": "https://foxplayer.com.br/msx/fundo-fox.jpg",
-    "action": "link:http://tv.foxplayer.com.br/app/index.html?v=8",
+    "action": "link:http://tv.foxplayer.com.br/app/index.html?v=9",
     "ready": {
-        "action": "link:http://tv.foxplayer.com.br/app/index.html?v=8"
+        "action": "link:http://tv.foxplayer.com.br/app/index.html?v=9"
     },
     "template": {
         "type": "button",
@@ -19,7 +19,7 @@
             "icon": "play-circle",
             "color": "msx-red",
             "focus": true,
-            "action": "link:http://tv.foxplayer.com.br/app/index.html?v=8"
+            "action": "link:http://tv.foxplayer.com.br/app/index.html?v=9"
         }
     ]
 }
