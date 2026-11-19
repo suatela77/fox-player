@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fox Player na TV</title>
+<meta property="og:title" content="Fox Player na TV">
+<meta property="og:description" content="Escolha a sua TV e veja o passo a passo em vídeo.">
+<meta property="og:image" content="https://foxplayer.com.br/tutorial/fox.jpg">
+<style>
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;font-family:Arial,Helvetica,sans-serif;color:#fff;background:#120e16 radial-gradient(ellipse at 20% 0%,#6b2440 0%,#2a1424 50%,#120e16 100%) fixed;display:flex;flex-direction:column;align-items:center;padding:36px 16px 40px}
+.logo{width:120px;border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+h1{font-size:34px;font-weight:900;margin:22px 0 6px;text-align:center}
+.sub{font-size:19px;color:#e9d6de;margin-bottom:24px}
+.op{width:100%;max-width:520px;text-align:left;border-radius:20px;padding:20px 22px;margin:9px 0;background:rgba(255,255,255,.07);border:2px solid;color:#fff;font:inherit;cursor:pointer;display:block;text-decoration:none}
+.op h2{font-size:26px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.op p{font-size:17px;line-height:1.4;color:#f3e6ea}
+.op b{color:#ffb36b}
+.play{font-size:15px;background:#e8742a;padding:6px 14px;border-radius:20px;white-space:nowrap}
+.lg{border-color:#e8742a}.sam{border-color:#3a8fd8}.out{border-color:#3fa35a}
+.foot{margin-top:28px;color:#e9d6de;font-size:16px;text-align:center}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;z-index:9}
+#modal.on{display:flex}
+#modal video{max-width:100%;max-height:82vh;border-radius:14px;background:#000}
+#fechar{margin-top:14px;background:#fff;color:#222;border:0;border-radius:24px;padding:12px 30px;font-size:17px;font-weight:700}
+</style>
+</head>
+<body>
+<img class="logo" src="fox.jpg" alt="Fox Player">
+<h1>Fox Player na TV</h1>
+<div class="sub">Qual é a sua TV? Toque nela 👇</div>
+
+<button class="op lg" data-v="tv-lg.mp4"><h2>📺 LG <span class="play">▶ Ver vídeo</span></h2><p>Passo a passo para instalar na <b>TV LG</b>.</p></button>
+<button class="op sam" data-v="tv-samsung.mp4"><h2>📺 Samsung <span class="play">▶ Ver vídeo</span></h2><p>Passo a passo para instalar na <b>TV Samsung</b>.</p></button>
+<div class="op out"><h2>📦 Roku e outras TVs</h2><p>Use um <b>TV Box</b> ou <b>Fire TV Stick</b> com o app <b>Fox Player</b> para Android. Peça o link ao seu revendedor.</p></div>
+
+<div class="foot">Dúvidas? Fale com o seu revendedor.</div>
+
+<div id="modal"><video id="vid" controls playsinline></video><button id="fechar">✕ Fechar</button></div>
+<script>
+(function(){
+  var m=document.getElementById('modal'),v=document.getElementById('vid');
+  var bs=document.querySelectorAll('[data-v]');
+  for(var i=0;i<bs.length;i++)bs[i].onclick=function(){v.src=this.getAttribute('data-v');m.className='on';try{v.play()}catch(e){}};
+  document.getElementById('fechar').onclick=function(){v.pause();v.removeAttribute('src');v.load();m.className=''};
+})();
+</script>
+</body>
+</html>
