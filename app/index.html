@@ -894,14 +894,17 @@ var g=function(i){var x=document.getElementById(i);return x&&!x.hidden};var open
 }
 </style>
 <script>
-/* Realçar voz: equalizador para deixar as falas mais altas que os efeitos */
+/* Realçar voz: equalizador para deixar as falas mais altas que os efeitos.
+   O app troca o elemento <video> a cada conteúdo, então o estado fica guardado em cada elemento. */
 (function(){
-  var v=document.getElementById('video'),b=document.getElementById('voiceBtn');if(!v||!b)return;
-  var AC=window.AudioContext||window.webkitAudioContext,ctx=null,srcNode=null,chain=null,ligado=false,ocupado=false;
+  var b=document.getElementById('voiceBtn');if(!b)return;
+  var AC=window.AudioContext||window.webkitAudioContext,ctx=null,ocupado=false;
+  function vid(){return document.getElementById('video')}
   function status(t){var e=document.getElementById('playerStatus');if(e)e.textContent=t}
-  function rotulo(){b.textContent=ligado?'🗣 Realçar voz: LIGADO':'🗣 Realçar voz'}
-  function montar(){
-    ctx=new AC();srcNode=ctx.createMediaElementSource(v);
+  function rotulo(){var v=vid();var on=!!(v&&v.__foxVoz&&v.__foxVoz.ligado);var t=on?'🗣 Voz realçada ✓':'🗣 Realçar voz';if(b.textContent!==t)b.textContent=t}
+  function montar(v){
+    if(!ctx)ctx=new AC();
+    var src=ctx.createMediaElementSource(v);
     var low=ctx.createBiquadFilter();low.type='lowshelf';low.frequency.value=180;low.gain.value=-7;
     var mid=ctx.createBiquadFilter();mid.type='peaking';mid.frequency.value=1200;mid.Q.value=0.9;mid.gain.value=4;
     var pres=ctx.createBiquadFilter();pres.type='peaking';pres.frequency.value=3000;pres.Q.value=1;pres.gain.value=7;
@@ -909,9 +912,9 @@ var g=function(i){var x=document.getElementById(i);return x&&!x.hidden};var open
     var comp=ctx.createDynamicsCompressor();comp.threshold.value=-32;comp.knee.value=18;comp.ratio.value=6;comp.attack.value=0.004;comp.release.value=0.25;
     var g=ctx.createGain();g.gain.value=1.8;
     low.connect(mid);mid.connect(pres);pres.connect(high);high.connect(comp);comp.connect(g);g.connect(ctx.destination);
-    chain=low;
+    v.__foxVoz={src:src,chain:low,ligado:false};
   }
-  function rota(){try{srcNode.disconnect()}catch(e){}srcNode.connect(ligado?chain:ctx.destination);try{ctx.resume()}catch(e){}}
+  function aplicar(v,on){var st=v.__foxVoz;st.ligado=on;try{st.src.disconnect()}catch(e){}st.src.connect(on?st.chain:ctx.destination);try{ctx.resume()}catch(e){}rotulo()}
   function servidorPermite(url,cb){
     if(/^blob:/.test(url))return cb(true);
     try{var x=new XMLHttpRequest();x.open('GET',url,true);x.setRequestHeader('Range','bytes=0-1');x.timeout=8000;
@@ -919,23 +922,25 @@ var g=function(i){var x=document.getElementById(i);return x&&!x.hidden};var open
       x.onreadystatechange=function(){if(x.readyState>=2)fim(x.status>0)};x.onerror=function(){fim(false)};x.ontimeout=function(){fim(false)};x.send()}catch(e){cb(false)}
   }
   b.onclick=function(){
+    var v=vid();if(!v)return;
+    if(v.__foxVoz){aplicar(v,!v.__foxVoz.ligado);status(v.__foxVoz.ligado?'Voz realçada.':'Som normal.');return}
     if(ocupado)return;
     if(!AC){status('Esta TV não permite realçar a voz. Use o modo de som "Voz clara" da TV.');return}
-    if(srcNode){ligado=!ligado;rota();rotulo();status(ligado?'Voz realçada.':'Som normal.');return}
-    var url=v.currentSrc||'';if(!url){status('Comece a assistir antes de realçar a voz.');return}
+    var url=v.currentSrc||v.src||'';if(!url){status('Comece a assistir antes de realçar a voz.');return}
     ocupado=true;status('Verificando se este conteúdo permite realçar a voz...');
+    var solta=setTimeout(function(){ocupado=false},12000);
     servidorPermite(url,function(ok){
-      ocupado=false;
+      ocupado=false;clearTimeout(solta);
+      if(vid()!==v)return;
       if(!ok){status('O servidor deste conteúdo não permite realçar a voz pelo app. Use o modo de som "Voz clara" da TV.');return}
-      var precisaRecarregar=!/^blob:/.test(url)&&v.crossOrigin!=='anonymous';
-      var ativar=function(){try{montar();ligado=true;rota();rotulo();status('Voz realçada.')}catch(e){status('Não foi possível realçar a voz neste conteúdo.')}};
-      if(!precisaRecarregar)return ativar();
+      var ativar=function(){try{montar(v);aplicar(v,true);status('Voz realçada. Aperte de novo para desligar.')}catch(e){status('Não foi possível realçar a voz neste conteúdo.')}};
+      if(/^blob:/.test(url)||v.crossOrigin==='anonymous')return ativar();
       var t=v.currentTime||0,tocando=!v.paused;v.crossOrigin='anonymous';
       var pronto=function(){v.removeEventListener('loadedmetadata',pronto);try{v.currentTime=t}catch(e){}if(tocando){try{v.play()}catch(e){}}ativar()};
       v.addEventListener('loadedmetadata',pronto);v.load();
     });
   };
-  rotulo();
+  setInterval(rotulo,1000);rotulo();
 })();
 </script>
 </body></html>
