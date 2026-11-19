@@ -445,7 +445,7 @@ header .brand{display:block;background:none;border:0;box-shadow:none;padding:0;l
 <section id="connect" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="connectTitle"><div class="panel"><div class="eyebrow">Conectar conteúdo próprio</div><h2 id="connectTitle">Adicionar sua lista</h2><div class="tabs"><button id="m3uTab" aria-pressed="true">Link ou arquivo M3U</button><button id="xtreamTab" aria-pressed="false">Xtream Codes</button></div>
 <form id="sourceForm"><label for="sourceName">Nome da lista</label><input id="sourceName" maxlength="80" placeholder="Minha lista" autocomplete="off"><div id="m3uFields"><label for="m3uUrl">Link M3U / M3U8</label><input id="m3uUrl" type="url" placeholder="https://servidor/lista.m3u" autocomplete="off"><p class="muted">Ou cole o conteúdo de um arquivo M3U:</p><textarea id="m3uText" placeholder="#EXTM3U" aria-label="Conteúdo M3U"></textarea><label for="m3uFile">Abrir arquivo (pelo celular)</label><input id="m3uFile" type="file" accept=".m3u,.m3u8,text/plain"></div><div id="xtreamFields" hidden><label for="server">Endereço do servidor</label><input id="server" type="url" placeholder="https://servidor:porta" autocomplete="off"><label for="username">Usuário</label><input id="username" autocomplete="off"><label for="password">Senha</label><input id="password" type="password" autocomplete="off"></div><label class="check"><input id="remember" type="checkbox">Lembrar lista e acesso neste aparelho</label><p>Use apenas em aparelho de confiança. Os dados salvos neste navegador podem conter a senha da lista. Os dados da lista ficam neste navegador. O servidor Fox recebe apenas a identificação da instalação para consultar a licença.</p><p id="connectStatus" role="status"></p><div class="actions"><button class="primary" id="submitSource" type="submit">Conectar lista</button><button type="button" id="closeConnect">Cancelar</button></div></form></div></section>
 <section id="settings" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="panel"><div class="eyebrow">Fox Player</div><h2 id="settingsTitle">Ajustes e informações</h2><p>Versão 0.7.17</p><div id="deviceHelp" hidden></div><p id="settingsStatus"></p><div class="actions"><button id="forget" class="danger">Apagar lista e dados salvos</button><button id="closeSettings" class="primary">Voltar</button></div></div></section>
-<section id="player" class="player" hidden role="dialog" aria-modal="true" aria-label="Reprodutor"><video id="video" playsinline preload="none" tabindex="-1"></video><div class="playerbar"><div class="actions"><strong id="playingTitle"></strong><button id="togglePlay">Pausar / continuar</button><button id="tryHls" hidden>Testar formato HLS</button><button id="favoriteBtn">☆ Favoritar</button><button id="fullscreen">Tela cheia</button><button id="closePlayer">← Voltar</button></div><p id="playerStatus" role="status"></p></div></section>
+<section id="player" class="player" hidden role="dialog" aria-modal="true" aria-label="Reprodutor"><video id="video" playsinline preload="none" tabindex="-1"></video><div class="playerbar"><div class="actions"><strong id="playingTitle"></strong><button id="togglePlay">Pausar / continuar</button><button id="voiceBtn">🗣 Realçar voz</button><button id="tryHls" hidden>Testar formato HLS</button><button id="favoriteBtn">☆ Favoritar</button><button id="fullscreen">Tela cheia</button><button id="closePlayer">← Voltar</button></div><p id="playerStatus" role="status"></p></div></section>
 <section id="categoryDialog" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="categoryTitle"><div class="panel"><h2 id="categoryTitle">Escolher categoria</h2><div id="categoryOptions"></div><div class="actions"><button id="closeCategories">← Voltar</button></div></div></section><script src="mpegts.min.js"></script>
 <script>
 (function(){'use strict';
@@ -893,4 +893,49 @@ var g=function(i){var x=document.getElementById(i);return x&&!x.hidden};var open
  html body .device{font-size:16px!important}
 }
 </style>
+<script>
+/* Realçar voz: equalizador para deixar as falas mais altas que os efeitos */
+(function(){
+  var v=document.getElementById('video'),b=document.getElementById('voiceBtn');if(!v||!b)return;
+  var AC=window.AudioContext||window.webkitAudioContext,ctx=null,srcNode=null,chain=null,ligado=false,ocupado=false;
+  function status(t){var e=document.getElementById('playerStatus');if(e)e.textContent=t}
+  function rotulo(){b.textContent=ligado?'🗣 Realçar voz: LIGADO':'🗣 Realçar voz'}
+  function montar(){
+    ctx=new AC();srcNode=ctx.createMediaElementSource(v);
+    var low=ctx.createBiquadFilter();low.type='lowshelf';low.frequency.value=180;low.gain.value=-7;
+    var mid=ctx.createBiquadFilter();mid.type='peaking';mid.frequency.value=1200;mid.Q.value=0.9;mid.gain.value=4;
+    var pres=ctx.createBiquadFilter();pres.type='peaking';pres.frequency.value=3000;pres.Q.value=1;pres.gain.value=7;
+    var high=ctx.createBiquadFilter();high.type='highshelf';high.frequency.value=8000;high.gain.value=-3;
+    var comp=ctx.createDynamicsCompressor();comp.threshold.value=-32;comp.knee.value=18;comp.ratio.value=6;comp.attack.value=0.004;comp.release.value=0.25;
+    var g=ctx.createGain();g.gain.value=1.8;
+    low.connect(mid);mid.connect(pres);pres.connect(high);high.connect(comp);comp.connect(g);g.connect(ctx.destination);
+    chain=low;
+  }
+  function rota(){try{srcNode.disconnect()}catch(e){}srcNode.connect(ligado?chain:ctx.destination);try{ctx.resume()}catch(e){}}
+  function servidorPermite(url,cb){
+    if(/^blob:/.test(url))return cb(true);
+    try{var x=new XMLHttpRequest();x.open('GET',url,true);x.setRequestHeader('Range','bytes=0-1');x.timeout=8000;
+      var feito=false,fim=function(ok){if(feito)return;feito=true;try{x.abort()}catch(e){}cb(ok)};
+      x.onreadystatechange=function(){if(x.readyState>=2)fim(x.status>0)};x.onerror=function(){fim(false)};x.ontimeout=function(){fim(false)};x.send()}catch(e){cb(false)}
+  }
+  b.onclick=function(){
+    if(ocupado)return;
+    if(!AC){status('Esta TV não permite realçar a voz. Use o modo de som "Voz clara" da TV.');return}
+    if(srcNode){ligado=!ligado;rota();rotulo();status(ligado?'Voz realçada.':'Som normal.');return}
+    var url=v.currentSrc||'';if(!url){status('Comece a assistir antes de realçar a voz.');return}
+    ocupado=true;status('Verificando se este conteúdo permite realçar a voz...');
+    servidorPermite(url,function(ok){
+      ocupado=false;
+      if(!ok){status('O servidor deste conteúdo não permite realçar a voz pelo app. Use o modo de som "Voz clara" da TV.');return}
+      var precisaRecarregar=!/^blob:/.test(url)&&v.crossOrigin!=='anonymous';
+      var ativar=function(){try{montar();ligado=true;rota();rotulo();status('Voz realçada.')}catch(e){status('Não foi possível realçar a voz neste conteúdo.')}};
+      if(!precisaRecarregar)return ativar();
+      var t=v.currentTime||0,tocando=!v.paused;v.crossOrigin='anonymous';
+      var pronto=function(){v.removeEventListener('loadedmetadata',pronto);try{v.currentTime=t}catch(e){}if(tocando){try{v.play()}catch(e){}}ativar()};
+      v.addEventListener('loadedmetadata',pronto);v.load();
+    });
+  };
+  rotulo();
+})();
+</script>
 </body></html>
