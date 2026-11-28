@@ -429,6 +429,7 @@ header .brand{display:block;background:none;border:0;box-shadow:none;padding:0;l
 #resumeDialog{z-index:95;display:flex;align-items:center;justify-content:center;background:#050810e8}#resumeDialog .panel{width:850px;text-align:center;border:2px solid #ffb26b}#resumeDialog h2{font-size:36px}#resumeDialog p{font-size:25px}#resumeDialog button{font-size:25px;min-height:65px}
 .playerbar .actions{gap:8px}.playerbar button{font-size:21px;padding:10px 14px}#nextEpisode{border-color:#ffb26b;background:#492b32}#nextEpisode:focus{background:#fff2e9;color:#251629}
 </style><style>
+/* v0.7.18: aviso de erro da lista em destaque (vermelho, grande) */
 /* v0.7.17: sem botão 'Verificar ativação' e sem texto de apoio; código do aparelho bem grande */
 #checkLicense{display:none!important}
 .device{font-size:26px!important}
@@ -470,7 +471,7 @@ var library=[],favorites={},source=null,kind='live',page=0,pageSize=12,mode='m3u
 function el(id){return document.getElementById(id)}
 function text(id,value){el(id).textContent=value}
 function visible(node){return !!(node.offsetWidth||node.offsetHeight||node.getClientRects().length)&&!node.disabled}
-function message(value,error){text('homeMessage',value);text('status',value);el('status').className=error?'error':''}
+function message(value,error){text('homeMessage',value);text('status',value);el('status').className=error?'error':'';var hm=el('homeMessage');if(hm)hm.className=error?'alert':''}
 function url(value,base){try{var a=new URL(value,base||location.href);if(a.protocol!=='https:'&&a.protocol!=='http:')throw Error();if(a.username||a.password)throw Error();return a.href}catch(e){throw Error('Informe um endereço HTTP ou HTTPS válido.')}}
 function xhr(address,json){return new Promise(function(resolve,reject){var r=new XMLHttpRequest();activeRequests=activeRequests.filter(function(x){return x.readyState!==4});activeRequests.push(r);r.open('GET',address,true);r.timeout=25000;r.onload=function(){if(r.status<200||r.status>=300)return reject(Error('O servidor recusou a consulta. Confira o endereço e o acesso.'));try{resolve(json?JSON.parse(r.responseText):r.responseText)}catch(e){reject(Error('Resposta inválida recebida do servidor.'))}};r.onerror=function(){reject(Error('Não foi possível acessar o servidor. Confira a conexão, HTTPS e a permissão de acesso pelo navegador (CORS).'))};r.ontimeout=function(){reject(Error('O servidor demorou para responder. Tente novamente.'))};r.onabort=function(){reject(Error('Consulta cancelada.'))};r.send()})}
 function abortRequests(){requestSeq++;activeRequests.forEach(function(r){if(r.readyState!==4)r.abort()});activeRequests=[]}
@@ -910,6 +911,12 @@ var g=function(i){var x=document.getElementById(i);return x&&!x.hidden};var open
  html body .device{font-size:16px!important}
 }
 #categoryRail button[aria-pressed=true]{box-shadow:inset 6px 0 0 #ff7a1a!important;font-weight:800!important}#categoryRail button[aria-pressed=true]::before{content:'▶ ';color:#ff7a1a}#categoryRail button:focus{transform:scale(1.04);box-shadow:0 0 0 4px #ff7a1a,0 0 18px #ff7a1a!important;outline:3px solid #fff!important;position:relative;z-index:2}
+</style>
+<style id="foxalert">
+/* v0.7.18: aviso de erro na tela inicial bem visível (fundo vermelho, letra grande e em negrito) */
+html body #homeMessage.alert{display:block!important;left:6%!important;right:6%!important;width:auto!important;box-sizing:border-box!important;padding:10px 20px!important;border-radius:12px!important;background:#b3261e!important;color:#fff!important;font-size:28px!important;line-height:1.25!important;font-weight:800!important;text-align:center!important;border:3px solid #ffd9d4!important;box-shadow:0 0 22px rgba(255,80,60,.55)!important}
+html body #homeMessage.alert::before{content:"\26A0\FE0E  "}
+@media (max-height:800px){html body #homeMessage.alert{font-size:26px!important;bottom:178px!important}}
 </style>
 <script>
 /* Realçar voz: equalizador para deixar as falas mais altas que os efeitos.
